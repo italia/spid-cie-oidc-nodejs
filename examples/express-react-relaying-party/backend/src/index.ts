@@ -1,12 +1,12 @@
-import express from 'express'
+import express from "express";
+import router from "./oidc-router";
+import { REPLACEME_PORT } from "./settings";
 
-const app = express()
-const REPLACEME_port = 3000
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+const app = express();
 
-app.listen(REPLACEME_port, () => {
-  console.log(`Example app listening on port ${REPLACEME_port}`)
-})
+app.use(router);
+
+app.listen(REPLACEME_PORT, () => {
+  console.log(`Example app listening on port ${REPLACEME_PORT}`);
+});
