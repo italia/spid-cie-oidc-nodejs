@@ -1,10 +1,9 @@
 import express from "express";
 import * as jose from "jose";
-import { createAuthenticationRequest_GET } from "./AuthenticationRequest";
 import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
-import {
-  getRelayingPartyEntityConfigurationJWS,
-} from "./RelayingPartyEntityConfiguration";
+import { RelayingPartyEntityConfiguration } from "./RelayingPartyEntityConfiguration";
+import { createJWS } from "./jws";
+import { createAuthenticationRequest_GET } from "./AuthenticationRequest";
 
 const REPLACEME_LANDING_ROUTE = "landing";
 const REPLACEME_AUTHORIZATION_ROUTE = "authorization";
@@ -58,7 +57,9 @@ export function RelayingPartyExpressRouter(
 
   // must be exposed by spec, used during onboarding with federation
   router.get("/" + REPLACEME_CONFIGURATION_ROUTE, async (req, res) => {
-    const jws = getRelayingPartyEntityConfigurationJWS(configuration);
+    const jwk = configuration.privateJWKS[0]; // TODO make it configurable
+    const entityConfiguration = RelayingPartyEntityConfiguration(configuration);
+    const jws = await createJWS(entityConfiguration, jwk);
     res.set("Content-Type", "application/entity-statement+jwt");
     res.end(jws);
   });

@@ -66,7 +66,7 @@ export function makeDefaultRelayingPartyConfiguration({
   trustAnchors,
   identityProviders,
   publicJWK,
-  privateJWK
+  privateJWK,
 }: {
   application_name: string;
   contacts: Array<string>;
@@ -130,7 +130,7 @@ export function makeDefaultRelayingPartyConfiguration({
     federationDefaultExp: 48 * 60 * 60 * 1000,
     trustAnchors,
     identityProviders,
-    publicJWKS: [privateJWK],
-    privateJWKS: [publicJWK],
+    publicJWKS: [publicJWK],
+    privateJWKS: [privateJWK],
   };
 }

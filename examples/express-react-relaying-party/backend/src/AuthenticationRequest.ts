@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import * as jose from "jose";
+import { createJWS } from "./jws";
 import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
 
 // TODO refactor to a object that can be converted to GET or POST request
@@ -104,16 +104,4 @@ function getPKCE() {
     code_challenge,
     code_challenge_method,
   };
-}
-
-async function createJWS<Payload extends jose.JWTPayload>(
-  payload: Payload,
-  jwk: jose.JWK
-) {
-  const encodedPayload = new TextEncoder().encode(JSON.stringify(payload));
-  const privateKey = await jose.importJWK(jwk, "RS256");
-  const jws = new jose.CompactSign(encodedPayload)
-    .setProtectedHeader({ alg: "RS256" })
-    .sign(privateKey);
-  return jws;
 }
