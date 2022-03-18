@@ -1,6 +1,7 @@
 import crypto from "crypto";
-import { createJWS } from "./jws";
+import { createJWS, makeIat } from "./uils";
 import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
+import { RelayingPartyEntityConfiguration } from "./RelayingPartyEntityConfiguration";
 
 // TODO refactor to a object that can be converted to GET or POST request
 // TODO create POST version
@@ -9,7 +10,7 @@ export async function createAuthenticationRequest_GET(
   {
     provider,
     scope = "openid",
-    redirect_uri = "http://localhost:3000/oidc/rp/callback", // TODO get default value from client_conf["redirect_uris"][0]
+    redirect_uri = configuration.redirect_uris[0],
     acr_values = "https://www.spid.gov.it/SpidL2", // TODO get from onboarding data
     prompt = "consent login",
     profile = "spid",
@@ -31,14 +32,14 @@ export async function createAuthenticationRequest_GET(
   const trustChain = {
     sub: "http://127.0.0.1:8000/oidc/op/",
   };
-  const authz_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO !!!!!!!!
+  const authz_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO
   const endpoint = authz_endpoint;
   const nonce = generateRandomString(32); // TODO need to be saved somewhere
   const state = generateRandomString(32); // TODO need to be saved somewhere
   const { code_verifier, code_challenge, code_challenge_method } = getPKCE(); // TODO store code_verifier somewhere
-  const response_type = "code"; // TODO get from client_conf["response_types"][0]
-  const client_id = "http://127.0.0.1:8000/oidc/rp/"; // TODO get from client_conf["client_id"]
-  const iat = Date.now();
+  const response_type = configuration.response_types[0];
+  const client_id = configuration.sub;
+  const iat = makeIat();
   const aud = [trustChain.sub, authz_endpoint];
   const claims = configuration.providers[profile].requestedClaims;
   const iss = client_id;
@@ -98,7 +99,6 @@ function getPKCE() {
     .createHash("sha256")
     .update(code_verifier)
     .digest("base64url");
-  // .replace("=",""); // TODO verify if necessary
   return {
     code_verifier,
     code_challenge,

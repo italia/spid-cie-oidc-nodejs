@@ -1,14 +1,15 @@
 import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
-import { REPLACEME_CALLBACK_ROUTE } from "./RelayingPartyExpressRouter";
+import { makeIat } from "./uils";
 
 export function RelayingPartyEntityConfiguration(
   configuration: RelayingPartyConfiguration
 ) {
-  const iat = Date.now();
+  const iat = makeIat();
   const exp = iat + configuration.federationDefaultExp;
   const iss = configuration.sub;
   const sub = configuration.sub;
   // parent authority
+  // TODO check if it is correct
   const authority_hints = configuration.trustAnchors;
   // oidc core public keys
   // TODO use separate keys for core and federation
@@ -18,8 +19,10 @@ export function RelayingPartyEntityConfiguration(
   // TODO use separate keys for core and federation
   const federation_jwks = { keys: configuration.publicJWKS };
   // you obtain this fron federation during onbaording process (after relaying party is validated)
-  // TODO let it paste
-  const trust_marks = [] as any;
+  const trust_marks = configuration.trustMarks;
+  const client_name = configuration.application_name;
+  const { application_type, contacts, redirect_uris, response_types } =
+    configuration;
   return {
     iat,
     exp,
@@ -28,15 +31,15 @@ export function RelayingPartyEntityConfiguration(
     jwks: core_jwks,
     metadata: {
       openid_relying_party: {
-        application_type: configuration.application_type,
-        client_id: configuration.sub,
+        application_type,
+        client_id: sub,
         client_registration_types: ["automatic"],
         jwks: federation_jwks,
-        client_name: configuration.application_name,
-        contacts: configuration.contacts,
+        client_name,
+        contacts,
         grant_types: ["refresh_token", "authorization_code"],
-        redirect_uris: [configuration.sub + REPLACEME_CALLBACK_ROUTE],
-        response_types: configuration.response_types,
+        redirect_uris,
+        response_types,
         subject_type: "pairwise",
       },
     },

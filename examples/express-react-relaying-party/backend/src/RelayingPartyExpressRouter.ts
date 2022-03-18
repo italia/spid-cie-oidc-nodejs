@@ -2,7 +2,7 @@ import express from "express";
 import * as jose from "jose";
 import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
 import { RelayingPartyEntityConfiguration } from "./RelayingPartyEntityConfiguration";
-import { createJWS } from "./jws";
+import { createJWS } from "./uils";
 import { createAuthenticationRequest_GET } from "./AuthenticationRequest";
 
 const REPLACEME_LANDING_ROUTE = "landing";

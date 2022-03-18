@@ -13,3 +13,7 @@ export async function createJWS<Payload extends jose.JWTPayload>(
     .sign(privateKey);
   return jws;
 }
+
+export function makeIat(){
+  return Date.now() / 1000;
+}

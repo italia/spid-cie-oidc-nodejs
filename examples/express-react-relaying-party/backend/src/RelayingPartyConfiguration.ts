@@ -1,4 +1,5 @@
 import * as jose from "jose";
+import { REPLACEME_CALLBACK_ROUTE } from "./RelayingPartyExpressRouter";
 
 // this configuration must be done on the relaying party side
 export type RelayingPartyConfiguration = {
@@ -17,8 +18,10 @@ export type RelayingPartyConfiguration = {
    * urls that identifies identity providers
    * @example ["https://spid.ag-pub-full.it/"]
    */
+  redirect_uris: Array<string>;
   identityProviders: Array<string>;
   publicJWKS: Array<jose.JWK>;
+  trustMarks: Array<{ id: string; trust_mark: string }>;
   privateJWKS: Array<jose.JWK>;
   application_name: string;
   application_type: "web";
@@ -39,7 +42,7 @@ export type RelayingPartyConfiguration = {
   userLookupField: string;
   /** which user attribute will be used to link to a preexisting account */
   userCreate: boolean;
-  /** jwt default expiration in milliseconds */
+  /** jwt default expiration in seconds */
   federationDefaultExp: number;
 };
 
@@ -57,6 +60,7 @@ export function validateRelayingPartyConfiguration(
   // TODO trustAnchors are valid urls
   // TODO identityProviders are valid urls
   // TODO public and private jwks have matching kids, and are valid jwks, that there is at least one jwk
+  // TODO check redirect uris are correct urls and at least one
 }
 
 export function makeDefaultRelayingPartyConfiguration({
@@ -67,6 +71,7 @@ export function makeDefaultRelayingPartyConfiguration({
   identityProviders,
   publicJWK,
   privateJWK,
+  trustMarks,
 }: {
   application_name: string;
   contacts: Array<string>;
@@ -75,6 +80,7 @@ export function makeDefaultRelayingPartyConfiguration({
   identityProviders: Array<string>;
   publicJWK: jose.JWK;
   privateJWK: jose.JWK;
+  trustMarks: Array<{ id: string; trust_mark: string }>;
 }): RelayingPartyConfiguration {
   return {
     sub,
@@ -127,10 +133,12 @@ export function makeDefaultRelayingPartyConfiguration({
     },
     userLookupField: "fiscal_number",
     userCreate: true,
-    federationDefaultExp: 48 * 60 * 60 * 1000,
+    federationDefaultExp: 48 * 60 * 60,
     trustAnchors,
     identityProviders,
     publicJWKS: [publicJWK],
     privateJWKS: [privateJWK],
+    trustMarks,
+    redirect_uris: [sub + REPLACEME_CALLBACK_ROUTE],
   };
 }
