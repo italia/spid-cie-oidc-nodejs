@@ -2,9 +2,7 @@ import crypto from "crypto";
 import { createJWS, makeIat } from "./uils";
 import { Configuration } from "./Configuration";
 
-// TODO refactor to a object that can be converted to GET or POST request
-// TODO create POST version
-export async function createAuthenticationRequest_GET(
+export function AuthenticationRequest(
   configuration: Configuration,
   {
     provider,
@@ -34,7 +32,7 @@ export async function createAuthenticationRequest_GET(
   const authz_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO
   const endpoint = authz_endpoint;
   const nonce = generateRandomString(32); // TODO need to be saved somewhere
-  const state = generateRandomString(32); // TODO need to be saved somewhere
+  const state = generateRandomString(32);
   const { code_verifier, code_challenge, code_challenge_method } = getPKCE(); // TODO store code_verifier somewhere
   const response_type = configuration.response_types[0];
   const client_id = configuration.client_id;
@@ -45,44 +43,60 @@ export async function createAuthenticationRequest_GET(
   const sub = client_id;
   // TODO check which relaying_party jwks can be used with the provider
   const jwk = configuration.private_jwks.keys[0];
-  const request = await createJWS(
-    {
+  async function asGetRequest() {
+    const request = await createJWS(
+      {
+        scope,
+        redirect_uri,
+        response_type,
+        nonce,
+        state,
+        client_id,
+        endpoint,
+        acr_values,
+        iat,
+        aud,
+        claims,
+        prompt,
+        code_challenge,
+        code_challenge_method,
+        iss,
+        sub,
+      },
+      jwk
+    );
+    return `${authz_endpoint}?${new URLSearchParams({
       scope,
       redirect_uri,
-      response_type,
       nonce,
       state,
+      response_type,
       client_id,
       endpoint,
       acr_values,
-      iat,
-      aud,
-      claims,
-      prompt,
+      iat: iat.toString(),
+      aud: JSON.stringify(aud),
+      claims: JSON.stringify(claims),
       code_challenge,
       code_challenge_method,
-      iss,
-      sub,
-    },
-    jwk
-  );
-  return `${authz_endpoint}?${new URLSearchParams({
-    scope,
-    redirect_uri,
-    nonce,
-    state,
-    response_type,
-    client_id,
-    endpoint,
-    acr_values,
-    iat: iat.toString(),
-    aud: JSON.stringify(aud),
-    claims: JSON.stringify(claims),
-    code_challenge,
-    code_challenge_method,
-    prompt,
-    request,
-  })}`;
+      prompt,
+      request,
+    })}`;
+  }
+  async function asPostRequest() {
+    // TODO implement
+  }
+  function asPersistable(): PersistedAuthorizationRequest {
+    return {
+      state,
+    };
+  }
+
+  return {
+    asGetRequest,
+    asPostRequest,
+    asPersistable,
+  };
 }
 
 function generateRandomString(length: number) {
@@ -104,3 +118,29 @@ function getPKCE() {
     code_challenge_method,
   };
 }
+
+type PersistedAuthorizationRequest = {
+  state: string;
+  // TODO save a the stuff from spec
+};
+
+type AuthorizationRequestRepository = {
+  add(authorizationRequest: PersistedAuthorizationRequest): Promise<void>;
+  getByState(state: string): Promise<PersistedAuthorizationRequest | null>;
+};
+
+// TODO me it replaceable
+export const REPLACEME_InMemoryAuthorizationRequestRepository: AuthorizationRequestRepository =
+  {
+    async add(authorizationRequest) {
+      inMemoryAuthorizationRequests.push(authorizationRequest);
+    },
+    async getByState(state) {
+      return (
+        inMemoryAuthorizationRequests.find(
+          (authorizationRequest) => authorizationRequest.state === state
+        ) ?? null
+      );
+    },
+  };
+const inMemoryAuthorizationRequests: Array<PersistedAuthorizationRequest> = [];

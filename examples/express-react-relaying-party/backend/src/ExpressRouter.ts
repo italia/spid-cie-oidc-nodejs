@@ -1,4 +1,5 @@
 import express from "express";
+import "reflect-metadata"
 import * as jose from "jose";
 import {
   Configuration,
@@ -6,7 +7,7 @@ import {
 } from "./Configuration";
 import { EntityConfiguration } from "./EntityConfiguration";
 import { createJWS } from "./uils";
-import { createAuthenticationRequest_GET } from "./AuthenticationRequest";
+import { AuthenticationRequest, REPLACEME_InMemoryAuthorizationRequestRepository } from "./AuthenticationRequest";
 
 const REPLACEME_LANDING_ROUTE = "landing";
 const REPLACEME_AUTHORIZATION_ROUTE = "authorization";
@@ -43,18 +44,20 @@ export function ExpressRouter(configuration: Configuration) {
     const redirect_uri = req.query.redirect_uri as string; // TODO validate that is a string or undefined
     const acr_values = req.query.acr_values as string; // TODO validate that is a string or undefined
     const prompt = req.query.prompt as string; // TODO validate that is a string or undefined
-    const redirectUrl = createAuthenticationRequest_GET(configuration, {
+    const authenticationRequest = AuthenticationRequest(configuration, {
       provider,
       scope,
       redirect_uri,
       acr_values,
       prompt,
     });
-    res.redirect(await redirectUrl);
+    REPLACEME_InMemoryAuthorizationRequestRepository.add(authenticationRequest.asPersistable())
+    const redirectUrl = await authenticationRequest.asGetRequest();
+    res.redirect(redirectUrl);
   });
 
   // provider will redirect here after user authenticate and grants access
-  router.get("/" + REPLACEME_CALLBACK_ROUTE, (req, res) => {
+  router.get("/" + REPLACEME_CALLBACK_ROUTE, async (req, res) => {
     if (req.query.error) {
       // TODO validate req.query.error is a string
       // TODO translate req.query.error
@@ -65,6 +68,35 @@ export function ExpressRouter(configuration: Configuration) {
         <h1>${req.query.error}</h1>
         <p>${req.query.error_description}</p>
       `);
+    } else if (req.query.code) {
+      // TODO validate code is string
+      // TODO validate state is string
+      // TODO validate iss is string
+      // recuperare richiesta fatta nel passo precedente in base a state
+      // const authorizationationRequest = await REPLACEME_InMemoryAuthorizationRequestRepository.getByState(
+      //   req.query.state
+      // ); // TODO error authentication not found 401
+      // recupero entity configuration di me stesso
+      // const entityConfiguration = REPLACEME_getEntityConfiguration(
+      //   authorizationationRequest.client_id
+      // ); // TODO error relaying party not found 400
+      // const authorizationationTokenRequest =
+      //   REPLACEME_createAuthorizationTokenRequest(
+      //     authorizationationRequest,
+      //     req.query.code
+      //   );
+      // chiami token endpoint per ottenere token
+      // questi token possono essere idToken e accessToken e opzionalmente refreshToken
+      // se scope e anche offline_access chiedere anche refreshToken
+      // const authorizationTokens = getTokens(
+      //   authorizationationTokenRequest
+      // ); // see for def access_token_request
+
+      // chiami get user info (devi usare token access) authorizationTokens.accessToken
+
+      // redirect su echo attributes (i claims sono ritrovati con user info)
+    } else {
+      // TODO error
     }
     console.log(req);
   });
