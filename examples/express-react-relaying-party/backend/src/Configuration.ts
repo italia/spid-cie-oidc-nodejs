@@ -7,29 +7,30 @@ export type Configuration = {
    * Url that identifies this relaying party.
    * The relaying party must be reachable on this url from outside
    */
-  sub: string;
+  client_id: string;
+  /** himan readable name of this application */
+  client_name: string;
   /**
    * urls that identifies trust anchors
    *
    * @example ["https://registry.spid.gov.it/"]
    */
-  trustAnchors: Array<string>;
+  /** emails */
+  contacts: Array<string>;
+  trust_anchors: Array<string>;
   /**
    * urls that identifies identity providers
    * @example ["https://spid.ag-pub-full.it/"]
    */
+  identity_providers: Array<string>;
   redirect_uris: Array<string>;
-  identityProviders: Array<string>;
-  publicJWKS: Array<jose.JWK>;
-  trustMarks: Array<{ id: string; trust_mark: string }>;
-  privateJWKS: Array<jose.JWK>;
-  application_name: string;
+  trust_marks: Array<{ id: string; trust_mark: string }>;
+  public_jwks: { keys: Array<jose.JWK> };
+  private_jwks: { keys: Array<jose.JWK> };
   application_type: "web";
-  /** emails */
-  contacts: Array<string>;
   response_types: Array<"code">;
   scope: Array<"openid" | "offline_access">;
-  token_endpoint_auth_method: ["private_key_jwt"];
+  token_endpoint_auth_method: Array<"private_key_jwt">;
   providers: Record<
     string,
     {
@@ -39,11 +40,11 @@ export type Configuration = {
     }
   >;
   /** which user attribute will be used to link to a preexisting account */
-  userLookupField: string;
+  user_lookup_field: string;
   /** which user attribute will be used to link to a preexisting account */
-  userCreate: boolean;
+  user_create: boolean;
   /** jwt default expiration in seconds */
-  federationDefaultExp: number;
+  federation_default_exp: number;
 };
 
 export function validateRelayingPartyConfiguration(
@@ -61,30 +62,31 @@ export function validateRelayingPartyConfiguration(
   // TODO identityProviders are valid urls
   // TODO public and private jwks have matching kids, and are valid jwks, that there is at least one jwk
   // TODO check redirect uris are correct urls and at least one
+  // TODO check arrays and space separated strings does not contain duplicates
 }
 
 export function makeDefaultConfiguration({
-  sub,
-  application_name,
+  client_id,
+  client_name,
   contacts,
-  trustAnchors,
-  identityProviders,
-  publicJWK,
-  privateJWK,
-  trustMarks,
+  trust_anchors,
+  identity_providers,
+  public_jwks,
+  private_jwks,
+  trust_marks,
 }: {
-  application_name: string;
+  client_id: string;
+  client_name: string;
   contacts: Array<string>;
-  sub: string;
-  trustAnchors: Array<string>;
-  identityProviders: Array<string>;
-  publicJWK: jose.JWK;
-  privateJWK: jose.JWK;
-  trustMarks: Array<{ id: string; trust_mark: string }>;
+  trust_anchors: Array<string>;
+  identity_providers: Array<string>;
+  public_jwks: { keys: Array<jose.JWK> };
+  private_jwks: { keys: Array<jose.JWK> };
+  trust_marks: Array<{ id: string; trust_mark: string }>;
 }): Configuration {
   return {
-    sub,
-    application_name,
+    client_id,
+    client_name,
     application_type: "web",
     contacts,
     response_types: ["code"],
@@ -131,14 +133,14 @@ export function makeDefaultConfiguration({
         },
       },
     },
-    userLookupField: "fiscal_number",
-    userCreate: true,
-    federationDefaultExp: 48 * 60 * 60,
-    trustAnchors,
-    identityProviders,
-    publicJWKS: [publicJWK],
-    privateJWKS: [privateJWK],
-    trustMarks,
-    redirect_uris: [sub + REPLACEME_CALLBACK_ROUTE],
+    user_lookup_field: "fiscal_number",
+    user_create: true,
+    federation_default_exp: 48 * 60 * 60,
+    trust_anchors,
+    identity_providers,
+    public_jwks,
+    private_jwks,
+    trust_marks,
+    redirect_uris: [client_id + REPLACEME_CALLBACK_ROUTE],
   };
 }

@@ -1,6 +1,9 @@
 import express from "express";
 import * as jose from "jose";
-import { Configuration } from "./Configuration";
+import {
+  Configuration,
+  validateRelayingPartyConfiguration,
+} from "./Configuration";
 import { EntityConfiguration } from "./EntityConfiguration";
 import { createJWS } from "./uils";
 import { createAuthenticationRequest_GET } from "./AuthenticationRequest";
@@ -12,9 +15,11 @@ const REPLACEME_ATTRIBUTES_ROUTE = "attributes";
 const REPLACEME_LOGOUT_ROUTE = "logout";
 const REPLACEME_CONFIGURATION_ROUTE = ".well-known/openid-federation";
 
-export function ExpressRouter(
-  configuration: Configuration
-) {
+export function ExpressRouter(configuration: Configuration) {
+  // TODO crash application if there are errors
+  // TODO report developer friendly errors
+  validateRelayingPartyConfiguration(configuration);
+
   const router = express.Router();
 
   // initial page where user lands
@@ -22,6 +27,7 @@ export function ExpressRouter(
   router.get("/" + REPLACEME_LANDING_ROUTE, (req, res) => {
     // TODO get trust chain
     // serve definitive ui
+    // TODO do not use unsafe html to prevent script injection
     res.end(`
       <a
         href="${REPLACEME_AUTHORIZATION_ROUTE}?provider=http://127.0.0.1:8000/oidc/op/"
@@ -48,7 +54,20 @@ export function ExpressRouter(
   });
 
   // provider will redirect here after user authenticate and grants access
-  router.get("/" + REPLACEME_CALLBACK_ROUTE, (req, res) => {});
+  router.get("/" + REPLACEME_CALLBACK_ROUTE, (req, res) => {
+    if (req.query.error) {
+      // TODO validate req.query.error is a string
+      // TODO translate req.query.error
+      // TODO validate req.query.error_description is string or undefined
+      // TODO translate req.query.error_description
+      // TODO do not use unsafe html to prevent script injection
+      res.end(`
+        <h1>${req.query.error}</h1>
+        <p>${req.query.error_description}</p>
+      `);
+    }
+    console.log(req);
+  });
 
   // show claims (attributes) about the user
   router.get("/" + REPLACEME_ATTRIBUTES_ROUTE, (req, res) => {});
@@ -57,7 +76,7 @@ export function ExpressRouter(
 
   // must be exposed by spec, used during onboarding with federation
   router.get("/" + REPLACEME_CONFIGURATION_ROUTE, async (req, res) => {
-    const jwk = configuration.privateJWKS[0]; // TODO make it configurable
+    const jwk = configuration.private_jwks.keys[0]; // TODO make it configurable
     const entityConfiguration = EntityConfiguration(configuration);
     const jws = await createJWS(entityConfiguration, jwk);
     res.set("Content-Type", "application/entity-statement+jwt");
@@ -73,14 +92,12 @@ export function ExpressRouter(
     const privateJWK = await jose.exportJWK(privateKey);
     privateJWK.kid = kid;
     res.end(`
-    <html>
       <h1>JWK generation utility</h1>
       <p>reload page to get a fresh one</p>
       <p>public key</p>
       <pre>${JSON.stringify(publicJWK, null, 2)}</pre>
       <p>private key</p>
       <pre>${JSON.stringify(privateJWK, null, 2)}</pre>
-    </html>
     `);
   });
 
