@@ -1,12 +1,12 @@
 import crypto from "crypto";
 import { createJWS, makeIat } from "./uils";
-import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
-import { RelayingPartyEntityConfiguration } from "./RelayingPartyEntityConfiguration";
+import { Configuration } from "./Configuration";
+import { EntityConfiguration } from "./EntityConfiguration";
 
 // TODO refactor to a object that can be converted to GET or POST request
 // TODO create POST version
 export async function createAuthenticationRequest_GET(
-  configuration: RelayingPartyConfiguration,
+  configuration: Configuration,
   {
     provider,
     scope = "openid",

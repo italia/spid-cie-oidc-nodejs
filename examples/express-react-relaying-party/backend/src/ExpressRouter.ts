@@ -1,7 +1,7 @@
 import express from "express";
 import * as jose from "jose";
-import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
-import { RelayingPartyEntityConfiguration } from "./RelayingPartyEntityConfiguration";
+import { Configuration } from "./Configuration";
+import { EntityConfiguration } from "./EntityConfiguration";
 import { createJWS } from "./uils";
 import { createAuthenticationRequest_GET } from "./AuthenticationRequest";
 
@@ -12,8 +12,8 @@ const REPLACEME_ATTRIBUTES_ROUTE = "attributes";
 const REPLACEME_LOGOUT_ROUTE = "logout";
 const REPLACEME_CONFIGURATION_ROUTE = ".well-known/openid-federation";
 
-export function RelayingPartyExpressRouter(
-  configuration: RelayingPartyConfiguration
+export function ExpressRouter(
+  configuration: Configuration
 ) {
   const router = express.Router();
 
@@ -58,7 +58,7 @@ export function RelayingPartyExpressRouter(
   // must be exposed by spec, used during onboarding with federation
   router.get("/" + REPLACEME_CONFIGURATION_ROUTE, async (req, res) => {
     const jwk = configuration.privateJWKS[0]; // TODO make it configurable
-    const entityConfiguration = RelayingPartyEntityConfiguration(configuration);
+    const entityConfiguration = EntityConfiguration(configuration);
     const jws = await createJWS(entityConfiguration, jwk);
     res.set("Content-Type", "application/entity-statement+jwt");
     res.end(jws);

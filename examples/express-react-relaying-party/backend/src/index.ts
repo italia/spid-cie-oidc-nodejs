@@ -1,6 +1,6 @@
 import express from "express";
-import { makeDefaultRelayingPartyConfiguration } from "./RelayingPartyConfiguration";
-import { RelayingPartyExpressRouter } from "./RelayingPartyExpressRouter";
+import { makeDefaultConfiguration } from "./Configuration";
+import { ExpressRouter } from "./ExpressRouter";
 
 const PORT = 3000;
 const ROUTE = "/oidc/rp/";
@@ -11,10 +11,10 @@ const app = express();
 
 app.use(
   ROUTE,
-  RelayingPartyExpressRouter(
+  ExpressRouter(
     // TODO explain that this is only a helper
-    // TODO see RelayingPartyConfiguration for more details
-    makeDefaultRelayingPartyConfiguration({
+    // TODO see Configuration for more details
+    makeDefaultConfiguration({
       application_name: "My Application",
       contacts: ["me@mail.com"],
       sub: CLIENT_ID,

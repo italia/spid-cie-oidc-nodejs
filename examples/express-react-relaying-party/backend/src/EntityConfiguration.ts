@@ -1,8 +1,8 @@
-import { RelayingPartyConfiguration } from "./RelayingPartyConfiguration";
+import { Configuration } from "./Configuration";
 import { makeIat } from "./uils";
 
-export function RelayingPartyEntityConfiguration(
-  configuration: RelayingPartyConfiguration
+export function EntityConfiguration(
+  configuration: Configuration
 ) {
   const iat = makeIat();
   const exp = iat + configuration.federationDefaultExp;

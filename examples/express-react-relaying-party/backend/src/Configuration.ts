@@ -1,8 +1,8 @@
 import * as jose from "jose";
-import { REPLACEME_CALLBACK_ROUTE } from "./RelayingPartyExpressRouter";
+import { REPLACEME_CALLBACK_ROUTE } from "./ExpressRouter";
 
 // this configuration must be done on the relaying party side
-export type RelayingPartyConfiguration = {
+export type Configuration = {
   /**
    * Url that identifies this relaying party.
    * The relaying party must be reachable on this url from outside
@@ -47,7 +47,7 @@ export type RelayingPartyConfiguration = {
 };
 
 export function validateRelayingPartyConfiguration(
-  configuration: RelayingPartyConfiguration
+  configuration: Configuration
 ) {
   // TODO validate configuration for better developer experience
   // TODO sub is valid url
@@ -63,7 +63,7 @@ export function validateRelayingPartyConfiguration(
   // TODO check redirect uris are correct urls and at least one
 }
 
-export function makeDefaultRelayingPartyConfiguration({
+export function makeDefaultConfiguration({
   sub,
   application_name,
   contacts,
@@ -81,7 +81,7 @@ export function makeDefaultRelayingPartyConfiguration({
   publicJWK: jose.JWK;
   privateJWK: jose.JWK;
   trustMarks: Array<{ id: string; trust_mark: string }>;
-}): RelayingPartyConfiguration {
+}): Configuration {
   return {
     sub,
     application_name,
