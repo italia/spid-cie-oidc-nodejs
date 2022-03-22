@@ -1,4 +1,6 @@
 import * as jose from "jose";
+import crypto from "crypto";
+import { Configuration } from "./Configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(
   payload: Payload,
@@ -14,6 +16,15 @@ export async function createJWS<Payload extends jose.JWTPayload>(
   return jws;
 }
 
-export function makeIat(){
+export function makeIat() {
   return Date.now() / 1000;
+}
+
+export function generateRandomString(length: number) {
+  return crypto.randomBytes(length).toString("hex");
+}
+
+// TODO implement
+export function getPrivateJWKforProvider(configuration: Configuration) {
+  return configuration.private_jwks.keys[0];
 }

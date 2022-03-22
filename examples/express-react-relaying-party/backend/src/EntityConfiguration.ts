@@ -1,5 +1,5 @@
 import { Configuration } from "./Configuration";
-import { makeIat } from "./uils";
+import { makeIat } from "./utils";
 
 export function EntityConfiguration(configuration: Configuration) {
   const iat = makeIat();

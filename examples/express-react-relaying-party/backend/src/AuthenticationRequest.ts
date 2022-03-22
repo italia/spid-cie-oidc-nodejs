@@ -1,6 +1,13 @@
 import crypto from "crypto";
-import { createJWS, makeIat } from "./uils";
+import {
+  createJWS,
+  generateRandomString,
+  getPrivateJWKforProvider,
+  makeIat,
+} from "./utils";
 import { Configuration } from "./Configuration";
+import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
+import { dataSource } from "./persistance/data-source";
 
 export function AuthenticationRequest(
   configuration: Configuration,
@@ -20,8 +27,8 @@ export function AuthenticationRequest(
     profile?: string;
   }
 ) {
-  // TODO provider is a known provider
-  // TODO validate scope parameter (should be space sperated list of supported scopes, must inclulde openid)
+  // TODO validate provider is a known provider
+  // TODO validate scope parameter (should be space sperated list of supported scopes, must include openid)
   // TODO validate prompt inculdes supported values (space separated)
   // TODO validate redirect_uri is well formed
 
@@ -29,20 +36,20 @@ export function AuthenticationRequest(
   const trustChain = {
     sub: "http://127.0.0.1:8000/oidc/op/",
   };
-  const authz_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO
-  const endpoint = authz_endpoint;
-  const nonce = generateRandomString(32); // TODO need to be saved somewhere
+  const authorization_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO
+  const token_endpoint = "http://127.0.0.1:8000/oidc/op/token/"; // TODO
+  const endpoint = authorization_endpoint;
+  const nonce = generateRandomString(32); // TODO need to be saved somewhere?
   const state = generateRandomString(32);
-  const { code_verifier, code_challenge, code_challenge_method } = getPKCE(); // TODO store code_verifier somewhere
+  const { code_verifier, code_challenge, code_challenge_method } = getPKCE();
   const response_type = configuration.response_types[0];
   const client_id = configuration.client_id;
   const iat = makeIat();
-  const aud = [trustChain.sub, authz_endpoint];
+  const aud = [trustChain.sub, authorization_endpoint];
   const claims = configuration.providers[profile].requestedClaims;
   const iss = client_id;
   const sub = client_id;
-  // TODO check which relaying_party jwks can be used with the provider
-  const jwk = configuration.private_jwks.keys[0];
+  const jwk = getPrivateJWKforProvider(configuration);
   async function asGetRequest() {
     const request = await createJWS(
       {
@@ -65,7 +72,7 @@ export function AuthenticationRequest(
       },
       jwk
     );
-    return `${authz_endpoint}?${new URLSearchParams({
+    const url = `${authorization_endpoint}?${new URLSearchParams({
       scope,
       redirect_uri,
       nonce,
@@ -82,25 +89,25 @@ export function AuthenticationRequest(
       prompt,
       request,
     })}`;
+    return { url };
   }
   async function asPostRequest() {
     // TODO implement
   }
-  function asPersistable(): PersistedAuthorizationRequest {
-    return {
+  function asEntity() {
+    return dataSource.getRepository(AuthenticationRequestEntity).create({
       state,
-    };
+      redirect_uri,
+      token_endpoint,
+      code_verifier,
+    });
   }
 
   return {
     asGetRequest,
     asPostRequest,
-    asPersistable,
+    asEntity,
   };
-}
-
-function generateRandomString(length: number) {
-  return crypto.randomBytes(length).toString("hex");
 }
 
 // TODO support more code challange methods
@@ -118,29 +125,3 @@ function getPKCE() {
     code_challenge_method,
   };
 }
-
-type PersistedAuthorizationRequest = {
-  state: string;
-  // TODO save a the stuff from spec
-};
-
-type AuthorizationRequestRepository = {
-  add(authorizationRequest: PersistedAuthorizationRequest): Promise<void>;
-  getByState(state: string): Promise<PersistedAuthorizationRequest | null>;
-};
-
-// TODO me it replaceable
-export const REPLACEME_InMemoryAuthorizationRequestRepository: AuthorizationRequestRepository =
-  {
-    async add(authorizationRequest) {
-      inMemoryAuthorizationRequests.push(authorizationRequest);
-    },
-    async getByState(state) {
-      return (
-        inMemoryAuthorizationRequests.find(
-          (authorizationRequest) => authorizationRequest.state === state
-        ) ?? null
-      );
-    },
-  };
-const inMemoryAuthorizationRequests: Array<PersistedAuthorizationRequest> = [];

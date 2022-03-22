@@ -1,13 +1,15 @@
 import express from "express";
-import "reflect-metadata"
 import * as jose from "jose";
 import {
   Configuration,
   validateRelayingPartyConfiguration,
 } from "./Configuration";
 import { EntityConfiguration } from "./EntityConfiguration";
-import { createJWS } from "./uils";
-import { AuthenticationRequest, REPLACEME_InMemoryAuthorizationRequestRepository } from "./AuthenticationRequest";
+import { createJWS } from "./utils";
+import { AuthenticationRequest } from "./AuthenticationRequest";
+import { dataSource } from "./persistance/data-source";
+import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
+import { AccessTokenRequest } from "./AccessTokenRequest";
 
 const REPLACEME_LANDING_ROUTE = "landing";
 const REPLACEME_AUTHORIZATION_ROUTE = "authorization";
@@ -21,6 +23,14 @@ export function ExpressRouter(configuration: Configuration) {
   // TODO report developer friendly errors
   validateRelayingPartyConfiguration(configuration);
 
+  // TODO manage error
+  dataSource.initialize().then(
+    () => {
+      console.log("database connected");
+    },
+    () => console.log("database error")
+  );
+
   const router = express.Router();
 
   // initial page where user lands
@@ -29,7 +39,7 @@ export function ExpressRouter(configuration: Configuration) {
     // TODO get trust chain
     // serve definitive ui
     // TODO do not use unsafe html to prevent script injection
-    res.end(`
+    res.send(`
       <a
         href="${REPLACEME_AUTHORIZATION_ROUTE}?provider=http://127.0.0.1:8000/oidc/op/"
       >Login with SPID</a>
@@ -51,8 +61,8 @@ export function ExpressRouter(configuration: Configuration) {
       acr_values,
       prompt,
     });
-    REPLACEME_InMemoryAuthorizationRequestRepository.add(authenticationRequest.asPersistable())
-    const redirectUrl = await authenticationRequest.asGetRequest();
+    await dataSource.manager.save(authenticationRequest.asEntity());
+    const { url: redirectUrl } = await authenticationRequest.asGetRequest();
     res.redirect(redirectUrl);
   });
 
@@ -64,33 +74,34 @@ export function ExpressRouter(configuration: Configuration) {
       // TODO validate req.query.error_description is string or undefined
       // TODO translate req.query.error_description
       // TODO do not use unsafe html to prevent script injection
-      res.end(`
+      res.send(`
         <h1>${req.query.error}</h1>
         <p>${req.query.error_description}</p>
       `);
     } else if (req.query.code) {
       // TODO validate code is string
+      if (typeof req.query.code !== "string") throw new Error(); // TODO rewrite with validator
       // TODO validate state is string
+      if (typeof req.query.state !== "string") throw new Error(); // TODO rewrite with validator
       // TODO validate iss is string
-      // recuperare richiesta fatta nel passo precedente in base a state
-      // const authorizationationRequest = await REPLACEME_InMemoryAuthorizationRequestRepository.getByState(
-      //   req.query.state
-      // ); // TODO error authentication not found 401
+      const athenticationRequestEntity = await dataSource.manager.findOne(
+        AuthenticationRequestEntity,
+        { where: { state: req.query.state } }
+      );
+      if (!athenticationRequestEntity) {
+        res.status(401).send("Authentication not found");
+        return;
+      }
       // recupero entity configuration di me stesso
       // const entityConfiguration = REPLACEME_getEntityConfiguration(
       //   authorizationationRequest.client_id
       // ); // TODO error relaying party not found 400
-      // const authorizationationTokenRequest =
-      //   REPLACEME_createAuthorizationTokenRequest(
-      //     authorizationationRequest,
-      //     req.query.code
-      //   );
-      // chiami token endpoint per ottenere token
-      // questi token possono essere idToken e accessToken e opzionalmente refreshToken
-      // se scope e anche offline_access chiedere anche refreshToken
-      // const authorizationTokens = getTokens(
-      //   authorizationationTokenRequest
-      // ); // see for def access_token_request
+      const accessTokenRequest = AccessTokenRequest(
+        configuration,
+        athenticationRequestEntity,
+        { code: req.query.code }
+      );
+      const { id_token, access_token } = await accessTokenRequest.doPost();
 
       // chiami get user info (devi usare token access) authorizationTokens.accessToken
 
@@ -98,7 +109,6 @@ export function ExpressRouter(configuration: Configuration) {
     } else {
       // TODO error
     }
-    console.log(req);
   });
 
   // show claims (attributes) about the user
@@ -112,7 +122,7 @@ export function ExpressRouter(configuration: Configuration) {
     const entityConfiguration = EntityConfiguration(configuration);
     const jws = await createJWS(entityConfiguration, jwk);
     res.set("Content-Type", "application/entity-statement+jwt");
-    res.end(jws);
+    res.send(jws);
   });
 
   // TODO move elsewhere
@@ -123,7 +133,7 @@ export function ExpressRouter(configuration: Configuration) {
     publicJWK.kid = kid;
     const privateJWK = await jose.exportJWK(privateKey);
     privateJWK.kid = kid;
-    res.end(`
+    res.send(`
       <h1>JWK generation utility</h1>
       <p>reload page to get a fresh one</p>
       <p>public key</p>
