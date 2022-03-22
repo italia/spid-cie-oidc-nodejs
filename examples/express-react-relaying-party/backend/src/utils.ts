@@ -6,8 +6,7 @@ export async function createJWS<Payload extends jose.JWTPayload>(
   payload: Payload,
   jwk: jose.JWK
 ) {
-  // TODO import properly also other types of algorithms
-  const privateKey = await jose.importJWK(jwk, "RS256");
+  const privateKey = await jose.importJWK(jwk, inferAlgForJWK(jwk));
   const jws = new jose.CompactSign(
     new TextEncoder().encode(JSON.stringify(payload))
   )
@@ -27,4 +26,11 @@ export function generateRandomString(length: number) {
 // TODO implement
 export function getPrivateJWKforProvider(configuration: Configuration) {
   return configuration.private_jwks.keys[0];
+}
+
+export function inferAlgForJWK(jwk: jose.JWK) {
+  if (jwk.kty === "RSA") return "RS256";
+  if (jwk.kty === "EC") return "ES256";
+  // TODO support more types
+  throw new Error("unsupported key type");
 }

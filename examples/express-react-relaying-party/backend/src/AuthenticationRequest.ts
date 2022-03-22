@@ -38,8 +38,20 @@ export function AuthenticationRequest(
   };
   const authorization_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO
   const token_endpoint = "http://127.0.0.1:8000/oidc/op/token/"; // TODO
+  const userinfo_endpoint = "http://127.0.0.1:8000/oidc/op/userinfo/"; // TODO
+  const provider_jwks = {
+    keys: [
+      {
+        kty: "RSA",
+        use: "sig",
+        n: "01_4aI2Lu5ggsElmRkE_S_a83V_szXU0txV4db2hmJ8HR1Y2s7PsZZ5-emGpnTydGrR3n-QExeEEIcFt_a06Ryiink34RQcKoGXUDBMBU0Bu8G7NcZ99YX6yeG9wFi4xs-WviTPmtPqijkz6jm1_ltWDcwbktfkraIRKKggZaEl9ldtsFr2wSpin3AXuGIdeJ0hZqhF92ODBLGjJlaIL9KlwopDy56adReVnraawSdrxmuPGj78IEADNAme2nQNvv9UCu0FkAn5St1bKds3Gpv26W0kjr1gZLsmQrj9lTcDk_KbAwfEY__P7se62kusoSuKMTQqUG1TQpUY7oFGSdw",
+        e: "AQAB",
+        kid: "dB67gL7ck3TFiIAf7N6_7SHvqk0MDYMEQcoGGlkUAAw",
+      },
+    ],
+  };
   const endpoint = authorization_endpoint;
-  const nonce = generateRandomString(32); // TODO need to be saved somewhere?
+  const nonce = generateRandomString(32);
   const state = generateRandomString(32);
   const { code_verifier, code_challenge, code_challenge_method } = getPKCE();
   const response_type = configuration.response_types[0];
@@ -97,9 +109,11 @@ export function AuthenticationRequest(
   function asEntity() {
     return dataSource.getRepository(AuthenticationRequestEntity).create({
       state,
+      code_verifier,
       redirect_uri,
       token_endpoint,
-      code_verifier,
+      userinfo_endpoint,
+      provider_jwks,
     });
   }
 

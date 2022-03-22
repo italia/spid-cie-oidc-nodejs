@@ -10,11 +10,12 @@ import { AuthenticationRequest } from "./AuthenticationRequest";
 import { dataSource } from "./persistance/data-source";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { AccessTokenRequest } from "./AccessTokenRequest";
+import { UserInfoRequest } from "./UserInfoRequest";
 
-const REPLACEME_LANDING_ROUTE = "landing";
+const REPLACEME_LANDING_ROUTE = "landing"; // TODO change to "provider_list" to be fetched from frontend
 const REPLACEME_AUTHORIZATION_ROUTE = "authorization";
 export const REPLACEME_CALLBACK_ROUTE = "callback";
-const REPLACEME_ATTRIBUTES_ROUTE = "attributes";
+const REPLACEME_ATTRIBUTES_ROUTE = "attributes"; // TODO change to "user attributes" to be fetched from frontend
 const REPLACEME_LOGOUT_ROUTE = "logout";
 const REPLACEME_CONFIGURATION_ROUTE = ".well-known/openid-federation";
 
@@ -92,20 +93,23 @@ export function ExpressRouter(configuration: Configuration) {
         res.status(401).send("Authentication not found");
         return;
       }
-      // recupero entity configuration di me stesso
-      // const entityConfiguration = REPLACEME_getEntityConfiguration(
-      //   authorizationationRequest.client_id
-      // ); // TODO error relaying party not found 400
       const accessTokenRequest = AccessTokenRequest(
         configuration,
         athenticationRequestEntity,
         { code: req.query.code }
       );
       const { id_token, access_token } = await accessTokenRequest.doPost();
-
-      // chiami get user info (devi usare token access) authorizationTokens.accessToken
-
-      // redirect su echo attributes (i claims sono ritrovati con user info)
+      const userInfo = await UserInfoRequest(
+        configuration,
+        athenticationRequestEntity,
+        access_token
+      ).doGet();
+      // TODO redirect su echo attributes (i claims sono ritrovati con user info)
+      // TODO do not use unsafe html to prevent script injection
+      res.send(`
+        <pre>${JSON.stringify(userInfo, null, 2)}</pre>
+        <a href="">logout</a>
+      `);
     } else {
       // TODO error
     }
@@ -114,7 +118,9 @@ export function ExpressRouter(configuration: Configuration) {
   // show claims (attributes) about the user
   router.get("/" + REPLACEME_ATTRIBUTES_ROUTE, (req, res) => {});
 
-  router.get("/" + REPLACEME_LOGOUT_ROUTE, (req, res) => {});
+  router.get("/" + REPLACEME_LOGOUT_ROUTE, (req, res) => {
+    // TODO
+  });
 
   // must be exposed by spec, used during onboarding with federation
   router.get("/" + REPLACEME_CONFIGURATION_ROUTE, async (req, res) => {
