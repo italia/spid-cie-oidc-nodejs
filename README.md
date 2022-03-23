@@ -8,6 +8,9 @@
 
 The SPID/CIE OIDC Federation Relying Party, for in Node.js
 
+## Example projects
+
+- [express + react](examples/express-react-relaying-party/README.md)
 
 ## Useful links
 
@@ -29,3 +32,11 @@ Please open an issue if you've discoveerd a bug or if you want to ask some featu
 This software is released under the Apache 2 License by:
 
 - Frederik Batuna <frederik.batuna@smc.it>.
+
+## Notes for mantainers
+
+There are these remainders as comments or identifier prefixes:
+
+- TODO -> planned for a milestone
+- SHOULDO -> delayable until needed
+- REPLACEME -> to be implemented

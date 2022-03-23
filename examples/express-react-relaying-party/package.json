@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "build:frontend": "cd frontend && yarn && yarn build",
+    "build:backend": "cd backend && yarn && yarn build",
+    "build": "yarn build:frontend && yarn build:backend",
+    "start": "node backend/build/index.js"
+  }
+}
