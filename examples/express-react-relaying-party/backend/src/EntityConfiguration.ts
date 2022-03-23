@@ -1,9 +1,9 @@
 import { Configuration } from "./Configuration";
-import { makeIat } from "./utils";
+import { makeExp, makeIat } from "./utils";
 
 export function EntityConfiguration(configuration: Configuration) {
   const iat = makeIat();
-  const exp = iat + configuration.federation_default_exp;
+  const exp = makeExp(configuration.federation_default_exp);
   const iss = configuration.client_id;
   const sub = configuration.client_id;
   const client_id = configuration.client_id;

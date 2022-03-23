@@ -2,20 +2,21 @@ import React from "react";
 import "../components/access-button.css";
 import spidButtonIcon from "../components/spid-ico-circle-bb.svg";
 import cieButtonIcon from "../components/cie-ico-circle-bb.svg";
-import itProviderIcon from "../components/logo-it.svg";
+import itProviderIcon from "../components/spid-logo.svg";
+import { useQuery } from "react-query";
 
 const REPLACEME_translate = (text: string) => text;
 function ReplacemeTranslate(props: { children: React.ReactNode }) {
   return props.children as any;
 }
-const REPLACEME_url = (src: string) => src;
 
 export function LandingPage() {
-  // TODO load from backend
-  const providers: Array<{
-    sub: string;
-    metadata: { organization_name: string };
-  }> = [{ sub: "sub", metadata: { organization_name: "organization_name" } }];
+  const providers = useQuery("providers", async () => {
+    const response = await fetch("/oidc/rp/providers");
+    if (response.status !== 200) throw new Error();
+    const data = await response.json();
+    return data as Array<{ id: string; name: string; img: string }>;
+  });
   const [isSpidButtonOpen, setIsSpidButtonOpen] = React.useState(false);
   return (
     <div className="container pt-2 p-3">
@@ -85,25 +86,21 @@ export function LandingPage() {
                                 className="spid-idp-button-menu"
                                 aria-labelledby="spid-idp"
                               >
-                                {providers.map((provider, index) => {
+                                {providers.data?.map((provider) => {
                                   return (
                                     <li
-                                      key={index} // TODO use appropriate key
+                                      key={provider.id}
                                       className="spid-idp-button-link"
                                     >
                                       <a
-                                        href={`${REPLACEME_url(
-                                          "spid_cie_rp_begin"
-                                        )}?provider=${provider.sub}`}
+                                        href={`/oidc/rp/authorization?provider=${provider.id}`}
                                       >
                                         <span className="spid-sr-only">
-                                          {provider.metadata.organization_name}
+                                          {provider.name}
                                         </span>
                                         <img
                                           src={itProviderIcon}
-                                          alt={
-                                            provider.metadata.organization_name
-                                          }
+                                          alt={provider.name}
                                         />
                                       </a>
                                     </li>

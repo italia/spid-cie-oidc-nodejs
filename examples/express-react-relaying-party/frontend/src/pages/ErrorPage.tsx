@@ -1,10 +1,12 @@
 import React from "react";
+import { useSearchParams } from "react-router-dom";
 
 const REPLACEME_translate = (text: string) => text;
 
 export function ErrorPage() {
-  const error = "INVALID_REQUEST"; // TODO
-  const error_description = "Authentication request rejected by user"; // TODO
+  let [searchParams] = useSearchParams();
+  const error = searchParams.get("error") ?? "";
+  const error_description = searchParams.get("error_description") ?? "";
   return (
     <div className="container pt-2 p-3">
       <div className="row d-lg-flex">

@@ -1,5 +1,6 @@
 import * as jose from "jose";
 import { REPLACEME_CALLBACK_ROUTE } from "./ExpressRouter";
+import { Request, Response } from "express";
 
 // this configuration must be done on the relaying party side
 export type Configuration = {
@@ -39,12 +40,30 @@ export type Configuration = {
       requestedClaims: unknown;
     }
   >;
-  /** which user attribute will be used to link to a preexisting account */
-  user_lookup_field: string;
-  /** which user attribute will be used to link to a preexisting account */
-  user_create: boolean;
   /** jwt default expiration in seconds */
   federation_default_exp: number;
+  callbacks: Callbacks;
+  /** this function will be used to derive a user unique identifier from claims */
+  deriveUserIdentifier(user_info: unknown): string; // TODO better types for claims
+};
+
+type Callbacks = {
+  /** this callback will be called when some error occurs during authorization */
+  onError(
+    req: Request,
+    res: Response,
+    error: string,
+    error_description?: string
+  ): void;
+  /** this callback will be called when user_info is succesfully acquired */
+  onLogin(
+    req: Request,
+    res: Response,
+    /** is an opaque value, most often an json structure */
+    user_info: unknown
+  ): void;
+  /** this callback will be called when user logs out */
+  onLogout(req: Request, res: Response): void;
 };
 
 export function validateRelayingPartyConfiguration(
@@ -74,6 +93,7 @@ export function makeDefaultConfiguration({
   public_jwks,
   private_jwks,
   trust_marks,
+  callbacks,
 }: {
   client_id: string;
   client_name: string;
@@ -83,6 +103,7 @@ export function makeDefaultConfiguration({
   public_jwks: { keys: Array<jose.JWK> };
   private_jwks: { keys: Array<jose.JWK> };
   trust_marks: Array<{ id: string; trust_mark: string }>;
+  callbacks: Callbacks;
 }): Configuration {
   return {
     client_id,
@@ -133,8 +154,6 @@ export function makeDefaultConfiguration({
         },
       },
     },
-    user_lookup_field: "fiscal_number",
-    user_create: true,
     federation_default_exp: 48 * 60 * 60,
     trust_anchors,
     identity_providers,
@@ -142,5 +161,19 @@ export function makeDefaultConfiguration({
     private_jwks,
     trust_marks,
     redirect_uris: [client_id + REPLACEME_CALLBACK_ROUTE],
+    callbacks,
+    deriveUserIdentifier(claims) {
+      const userIdentifierFields = [
+        "https://attributes.spid.gov.it/fiscalNumber",
+        "fiscalNumber",
+      ];
+      if (!(typeof claims === "object" && claims !== null)) throw new Error();
+      const claimsAsRecord = claims as Record<string, unknown>;
+      for (const userIdentifierField of userIdentifierFields) {
+        const value = claimsAsRecord[userIdentifierField];
+        if (typeof value === "string") return value;
+      }
+      throw new Error();
+    },
   };
 }

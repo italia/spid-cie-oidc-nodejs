@@ -102,15 +102,13 @@ export function Header() {
               <div className="col-12">
                 <div className="it-header-center-content-wrapper">
                   <div className="it-brand-wrapper">
-                    <a href="#">
+                    <a href="/">
                       <svg className="icon">
                         <use xlinkHref={sprite + "#it-code-circle"}></use>
                       </svg>
                       <div className="it-brand-text">
                         <h2 className="no_toc">
-                          <a href={REPLACEME_url("spid_cie_rp_landing")}>
-                            {REPLACEME_translate("OIDC Relying Party")}
-                          </a>
+                          {REPLACEME_translate("OIDC Relying Party")}
                         </h2>
                         <h3 className="no_toc d-none d-md-block">
                           {REPLACEME_translate("OIDC Relying Party")}

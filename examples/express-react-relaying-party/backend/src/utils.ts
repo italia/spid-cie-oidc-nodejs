@@ -1,5 +1,6 @@
-import * as jose from "jose";
 import crypto from "crypto";
+import * as jose from "jose";
+import * as uuid from "uuid";
 import { Configuration } from "./Configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(
@@ -15,8 +16,18 @@ export async function createJWS<Payload extends jose.JWTPayload>(
   return jws;
 }
 
+// now timestamp in seconds
 export function makeIat() {
   return Date.now() / 1000;
+}
+
+// now + delta timestamp in seconds
+export function makeExp(deltaSeconds = 33 * 60) {
+  return makeIat() + deltaSeconds;
+}
+
+export function makeJti() {
+  return uuid.v4();
 }
 
 export function generateRandomString(length: number) {

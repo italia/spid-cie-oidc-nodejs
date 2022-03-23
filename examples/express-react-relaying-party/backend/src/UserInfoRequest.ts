@@ -19,7 +19,7 @@ export function UserInfoRequest(
     const jwe = await response.body.text();
     const jws = await decrypt(configuration, jwe);
     const jwt = await verify(authenticationRequestEntity, jws);
-    return jwt;
+    return jwt as unknown;
   }
   return { doGet };
 }

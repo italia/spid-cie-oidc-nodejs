@@ -1,4 +1,6 @@
 import express from "express";
+import path from "path";
+import session from "express-session";
 import { makeDefaultConfiguration } from "./Configuration";
 import { ExpressRouter } from "./ExpressRouter";
 
@@ -8,6 +10,14 @@ const DOMAIN = `http://127.0.0.1:${PORT}`;
 const CLIENT_ID = DOMAIN + ROUTE;
 
 const app = express();
+
+// TODO use encrypted cookie instead
+app.use(session({ secret: "spid-cie-oidc-nodejs" }));
+declare module "express-session" {
+  interface SessionData {
+    user_info?: unknown;
+  }
+}
 
 app.use(
   ROUTE,
@@ -57,10 +67,44 @@ app.use(
             "eyJhbGciOiJSUzI1NiIsImtpZCI6IkZpZll4MDNibm9zRDhtNmdZUUlmTkhOUDljTV9TYW05VGM1bkxsb0lJcmMiLCJ0eXAiOiJ0cnVzdC1tYXJrK2p3dCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvIiwic3ViIjoiaHR0cDovLzEyNy4wLjAuMTozMDAwL29pZGMvcnAvIiwiaWF0IjoxNjQ3OTQ0NjE3LCJpZCI6Imh0dHBzOi8vd3d3LnNwaWQuZ292Lml0L2NlcnRpZmljYXRpb24vcnAiLCJtYXJrIjoiaHR0cHM6Ly93d3cuYWdpZC5nb3YuaXQvdGhlbWVzL2N1c3RvbS9hZ2lkL2xvZ28uc3ZnIiwicmVmIjoiaHR0cHM6Ly9kb2NzLml0YWxpYS5pdC9pdGFsaWEvc3BpZC9zcGlkLXJlZ29sZS10ZWNuaWNoZS1vaWRjL2l0L3N0YWJpbGUvaW5kZXguaHRtbCJ9.SXNGE_WLPVD8kdbJVLlvlOOH_dXGhaGnZsHHimcFPFqQG8H-oYyet_Cl1Lsa92FfKMsngHVBW-xcUZUHkUzYDPL39iZGH6Jdzp8Z2gL5fN-sTbxvUZl5DzdaOluLQIk5lS8AFp-My7P6mLK5nVVhFsF9KWI3Tx0YGrpb4m10lDoohYhzY7cQ5m6UyYDgVqsB9FVBnGeDLMonzYw8qEJp29K7PExilNjg2YI8dwOr5fmmir_70WmYvI2lkOuYY_GyQHWRTV5DxzIfMuk9Nq4xeSjdimDViO6v3mzLCStw60rwib9wiHXt2a-l-nKpSF2QEx-qHCqHnctP1loMQMSU7Q",
         },
       ],
+      callbacks: {
+        onLogin(req, res, user_info) {
+          req.session.user_info = user_info;
+          res.redirect(`/attributes`);
+        },
+        onError(req, res, error, error_description) {
+          res.redirect(
+            `/error?error=${error}&error_description=${error_description}`
+          );
+        },
+        onLogout(req, res) {
+          req.session.destroy((error) => {
+            if (error) throw new Error(); // TODO decide what to do with the error
+          });
+          res.send(200);
+        },
+      },
     })
   )
 );
 
+// this endpoint is outside of the oidc lib
+// so you can provide your own way of storing and retreiving user data
+app.get("/oidc/rp/user_info", (req, res) => {
+  if (req.session.user_info) {
+    res.json(req.session.user_info);
+  } else {
+    res.status(401).send("User is not legged in");
+  }
+});
+
+// serve frontend static files
+app.use(express.static("frontend/build"));
+// every route leads back to index beacuse it is a single page application
+app.get("*", (req, res) =>
+  res.sendFile(path.resolve("frontend/build/index.html"))
+);
+
 app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}`);
+  console.log(`Open browser at http://127.0.0.1:${PORT}`);
 });

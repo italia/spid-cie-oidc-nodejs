@@ -39,7 +39,9 @@ export function AuthenticationRequest(
   const authorization_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO
   const token_endpoint = "http://127.0.0.1:8000/oidc/op/token/"; // TODO
   const userinfo_endpoint = "http://127.0.0.1:8000/oidc/op/userinfo/"; // TODO
+  const revocation_endpoint = "http://127.0.0.1:8000/oidc/op/revocation/"; // TODO
   const provider_jwks = {
+    // TODO
     keys: [
       {
         kty: "RSA",
@@ -113,10 +115,10 @@ export function AuthenticationRequest(
       redirect_uri,
       token_endpoint,
       userinfo_endpoint,
+      revocation_endpoint,
       provider_jwks,
     });
   }
-
   return {
     asGetRequest,
     asPostRequest,

@@ -11,12 +11,13 @@ import { dataSource } from "./persistance/data-source";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { AccessTokenRequest } from "./AccessTokenRequest";
 import { UserInfoRequest } from "./UserInfoRequest";
+import { RevocationRequest } from "./RevocationRequest";
+import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 
-const REPLACEME_LANDING_ROUTE = "landing"; // TODO change to "provider_list" to be fetched from frontend
+const REPLACEME_PROVIDERS_ROUTE = "providers";
 const REPLACEME_AUTHORIZATION_ROUTE = "authorization";
 export const REPLACEME_CALLBACK_ROUTE = "callback";
-const REPLACEME_ATTRIBUTES_ROUTE = "attributes"; // TODO change to "user attributes" to be fetched from frontend
-const REPLACEME_LOGOUT_ROUTE = "logout";
+const REPLACEME_REVOCATION_ROUTE = "revocation";
 const REPLACEME_CONFIGURATION_ROUTE = ".well-known/openid-federation";
 
 export function ExpressRouter(configuration: Configuration) {
@@ -29,22 +30,22 @@ export function ExpressRouter(configuration: Configuration) {
     () => {
       console.log("database connected");
     },
-    () => console.log("database error")
+    (error) => console.log("database error", error)
   );
 
   const router = express.Router();
 
-  // initial page where user lands
-  // shows buttons to login with various providers
-  router.get("/" + REPLACEME_LANDING_ROUTE, (req, res) => {
+  // available providers
+  // use this list to make create links for logging in ex: <a href="127.0.0.1:3000/oidc/rp/authorization?provider=http://127.0.0.1:8000/oidc/op/">login</a>
+  router.get("/" + REPLACEME_PROVIDERS_ROUTE, (req, res) => {
     // TODO get trust chain
-    // serve definitive ui
-    // TODO do not use unsafe html to prevent script injection
-    res.send(`
-      <a
-        href="${REPLACEME_AUTHORIZATION_ROUTE}?provider=http://127.0.0.1:8000/oidc/op/"
-      >Login with SPID</a>
-    `);
+    res.json([
+      {
+        id: "http://127.0.0.1:8000/oidc/rp/",
+        name: "dev pc",
+        img: "",
+      },
+    ]);
   });
 
   // user lands here from a link provided in landing page
@@ -71,55 +72,68 @@ export function ExpressRouter(configuration: Configuration) {
   router.get("/" + REPLACEME_CALLBACK_ROUTE, async (req, res) => {
     if (req.query.error) {
       // TODO validate req.query.error is a string
-      // TODO translate req.query.error
-      // TODO validate req.query.error_description is string or undefined
-      // TODO translate req.query.error_description
-      // TODO do not use unsafe html to prevent script injection
-      res.send(`
-        <h1>${req.query.error}</h1>
-        <p>${req.query.error_description}</p>
-      `);
+      if (typeof req.query.error !== "string") throw new Error(); // TODO better error managment
+      if (
+        !(
+          typeof req.query.error_description === "string" ||
+          req.query.error_description === undefined
+        )
+      ) {
+        throw new Error(); // TODO better error managment
+      }
+      const error = req.query.error;
+      const error_description = req.query.error_description;
+      configuration.callbacks.onError(req, res, error, error_description);
     } else if (req.query.code) {
       // TODO validate code is string
       if (typeof req.query.code !== "string") throw new Error(); // TODO rewrite with validator
       // TODO validate state is string
       if (typeof req.query.state !== "string") throw new Error(); // TODO rewrite with validator
       // TODO validate iss is string
-      const athenticationRequestEntity = await dataSource.manager.findOne(
+      const authentication_request = await dataSource.manager.findOne(
         AuthenticationRequestEntity,
         { where: { state: req.query.state } }
       );
-      if (!athenticationRequestEntity) {
+      if (!authentication_request) {
         res.status(401).send("Authentication not found");
         return;
       }
       const accessTokenRequest = AccessTokenRequest(
         configuration,
-        athenticationRequestEntity,
+        authentication_request,
         { code: req.query.code }
       );
       const { id_token, access_token } = await accessTokenRequest.doPost();
-      const userInfo = await UserInfoRequest(
+      const user_info = await UserInfoRequest(
         configuration,
-        athenticationRequestEntity,
+        authentication_request,
         access_token
       ).doGet();
-      // TODO redirect su echo attributes (i claims sono ritrovati con user info)
-      // TODO do not use unsafe html to prevent script injection
-      res.send(`
-        <pre>${JSON.stringify(userInfo, null, 2)}</pre>
-        <a href="">logout</a>
-      `);
+      const user_identifier = configuration.deriveUserIdentifier(user_info);
+      await dataSource.manager.save(
+        dataSource.getRepository(AccessTokenResponseEntity).create({
+          user_identifier,
+          authentication_request,
+          id_token,
+          access_token,
+          revoked: false,
+        })
+      );
+      configuration.callbacks.onLogin(req, res, user_info);
     } else {
       // TODO error
     }
   });
 
-  // show claims (attributes) about the user
-  router.get("/" + REPLACEME_ATTRIBUTES_ROUTE, (req, res) => {});
-
-  router.get("/" + REPLACEME_LOGOUT_ROUTE, (req, res) => {
-    // TODO
+  // called from frontend to logout the user
+  router.get("/" + REPLACEME_REVOCATION_ROUTE, async (req, res) => {
+    if (!req.session.user_info) throw new Error(); // TODO externalize session retreival
+    const revocationRequest = RevocationRequest(
+      configuration,
+      req.session.user_info
+    );
+    await revocationRequest.doPost();
+    configuration.callbacks.onLogout(req, res);
   });
 
   // must be exposed by spec, used during onboarding with federation

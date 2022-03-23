@@ -1,6 +1,11 @@
 import { Configuration } from "./Configuration";
-import { createJWS, getPrivateJWKforProvider, makeIat } from "./utils";
-import * as uuid from "uuid";
+import {
+  createJWS,
+  getPrivateJWKforProvider,
+  makeExp,
+  makeIat,
+  makeJti,
+} from "./utils";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { request } from "undici";
 
@@ -13,8 +18,8 @@ export function AccessTokenRequest(
   const iss = configuration.client_id;
   const sub = configuration.client_id;
   const iat = makeIat();
-  const exp = iat + configuration.federation_default_exp;
-  const jti = uuid.v4();
+  const exp = makeExp();
+  const jti = makeJti();
   const jwk = getPrivateJWKforProvider(configuration);
   const client_assertion_type =
     "urn:ietf:params:oauth:client-assertion-type:jwt-bearer";
@@ -22,10 +27,11 @@ export function AccessTokenRequest(
   const code_verifier = authenticationRequestEntity.code_verifier;
   const client_id = configuration.client_id;
   const redirect_uri = authenticationRequestEntity.redirect_uri;
+  const grant_type = "authorization_code";
   async function asPost() {
     const url = token_endpoint;
     const params = {
-      grant_type: "authorization_code",
+      grant_type,
       redirect_uri,
       client_id,
       state,
