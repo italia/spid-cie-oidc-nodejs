@@ -16,11 +16,12 @@ This project showcases the relaying party.
 
 - cd into this directory, your local directory that corresponds to [this](https://github.com/italia/spid-cie-oidc-nodejs/tree/main/examples/express-react-relaying-party)
   - run this command `yarn build && yarn start`
-  - this will start the relying party server on [http://127.0.0.1:3000](http://127.0.0.1:3000)
+  - this will start the relying party server on [http://127.0.0.1:3000](http://127.0.0.1:3000), keep it running
 
 - do the onboarding process
-  - register the relying party here (http://127.0.0.1:8000/admin/spid_cie_oidc_authority/federationdescendant/add)
+  - register the relying party [here](http://127.0.0.1:8000/admin/spid_cie_oidc_authority/federationdescendant/add)
     - paste in the federation related public jwks (you find them [here](backend/src/index.ts))
+    - set isActive to true
   - create new profile [here](http://127.0.0.1:8000/admin/spid_cie_oidc_authority/federationentityassignedprofile/add/)
     - usually you want a private or public profile as for spec
     - after creation you review the profiles

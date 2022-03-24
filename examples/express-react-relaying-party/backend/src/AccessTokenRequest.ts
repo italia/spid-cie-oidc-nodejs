@@ -56,8 +56,7 @@ export function AccessTokenRequest(
       body: new URLSearchParams(params).toString(),
     });
     if (response.statusCode !== 200) {
-      console.log(response.statusCode, await response.body.json());
-      throw new Error(); // TODO
+      throw new Error(); // TODO better error reporting
     }
     // TODO validate reponse
     return (await response.body.json()) as {

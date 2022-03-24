@@ -132,7 +132,7 @@ export function ExpressRouter(configuration: Configuration) {
       configuration,
       req.session.user_info
     );
-    await revocationRequest.doPost();
+    await revocationRequest.execute();
     configuration.callbacks.onLogout(req, res);
   });
 
