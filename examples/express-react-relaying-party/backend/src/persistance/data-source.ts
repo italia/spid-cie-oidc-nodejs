@@ -14,3 +14,11 @@ export const dataSource = new DataSource({
   migrations: [],
   subscribers: [],
 });
+
+// TODO manage error
+dataSource.initialize().then(
+  () => {
+    console.log("database connected");
+  },
+  (error) => console.log("database error", error)
+);

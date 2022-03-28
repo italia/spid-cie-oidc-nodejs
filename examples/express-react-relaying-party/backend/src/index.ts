@@ -3,7 +3,6 @@ import path from "path";
 import session from "express-session";
 import { makeDefaultConfiguration } from "./Configuration";
 import { ExpressRouter } from "./ExpressRouter";
-import { TrustChain } from "./TrustChain";
 
 const PORT = 3000;
 const ROUTE = "/oidc/rp/";
@@ -68,23 +67,6 @@ app.use(
             "eyJhbGciOiJSUzI1NiIsImtpZCI6IkZpZll4MDNibm9zRDhtNmdZUUlmTkhOUDljTV9TYW05VGM1bkxsb0lJcmMiLCJ0eXAiOiJ0cnVzdC1tYXJrK2p3dCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvIiwic3ViIjoiaHR0cDovLzEyNy4wLjAuMTozMDAwL29pZGMvcnAvIiwiaWF0IjoxNjQ4MTE5MzE0LCJpZCI6Imh0dHBzOi8vd3d3LnNwaWQuZ292Lml0L2NlcnRpZmljYXRpb24vcnAvcHJpdmF0ZSIsImxvZ29fdXJpIjoiaHR0cHM6Ly93d3cuYWdpZC5nb3YuaXQvdGhlbWVzL2N1c3RvbS9hZ2lkL2xvZ28uc3ZnIiwicmVmIjoiaHR0cHM6Ly9kb2NzLml0YWxpYS5pdC9pdGFsaWEvc3BpZC9zcGlkLXJlZ29sZS10ZWNuaWNoZS1vaWRjL2l0L3N0YWJpbGUvaW5kZXguaHRtbCJ9.pmZPMbIDNNtoBV4BTiRC8Z2pXQnRIGZRBCV2IdCNq-wn5x-KzwfL4D-VK0NPrSB8-4gHW9QgYl7O33qSl4rpgxJPR9ROTqwXR29gmX1Uuw63ptm2Ef_wYUI67A5QaxXU-DXed9vohfxJW5WddywjApGNjxY55Xgy3fUI5IZkwHuOGhDIPbSxJeuOxtE0Gmgi3z2fOTkpkGFj3OXnMA7xPFu8trIxtfIR8i4TVnrndqFJyBh1gk2AJk3gkW7dNsWl7uwWUqGJU_b1B1OoWP1G8z_5Dbdogg0Ixbwc98RRACQDgpXw3811AqBeAn4tLNmtL57eDc5IpqztCv7csdX9LA",
         },
       ],
-      callbacks: {
-        onLogin(req, res, user_info) {
-          req.session.user_info = user_info;
-          res.redirect(`/attributes`);
-        },
-        onError(req, res, error, error_description) {
-          res.redirect(
-            `/error?error=${error}&error_description=${error_description}`
-          );
-        },
-        onLogout(req, res) {
-          req.session.destroy((error) => {
-            if (error) throw new Error(); // TODO decide what to do with the error
-          });
-          res.send(200);
-        },
-      },
     })
   )
 );
@@ -114,4 +96,3 @@ app.listen(PORT, () => {
 // TODO logger as function default implementation write filesystem rotating log
 // TODO session (create, destroy, update) default implementation ecrypted cookie
 // TODO authorizationRequest access token storage default implementation in memory?
-
