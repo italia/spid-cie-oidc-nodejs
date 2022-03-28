@@ -1,0 +1,12 @@
+FROM node:16-alpine
+
+RUN apk update && apk add --no-cache --virtual .gyp python3 make g++
+RUN ln -s /usr/bin/python3 /usr/bin/python && ln -s /usr/bin/pip3 /usr/bin/pip
+
+EXPOSE 3000
+
+COPY . .
+
+RUN yarn build
+
+ENTRYPOINT ["yarn", "start"]

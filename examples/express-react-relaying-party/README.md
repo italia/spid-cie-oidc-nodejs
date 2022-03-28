@@ -30,3 +30,9 @@ This project showcases the relaying party.
 - visit [http://127.0.0.1:3000](http://127.0.0.1:3000) to try out the application
 
 - there is a tool for creating jwks [here](http://127.0.0.1:3000/oidc/rp/configuration-helper)
+
+### Docker
+
+A docker image containing this example can be built a run:
+  - `docker-compose up`
+  - visit `http://127.0.0.1:3000`

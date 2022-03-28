@@ -1,0 +1,17 @@
+version: "3.5"
+
+# SHOULDDO fix comunication issues between the two
+
+services:
+  trust-anchor.org:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.django
+    ports:
+      - "8000:8000"
+  relying-party.org:
+    build:
+      context: .
+      dockerfile: ./Dockerfile.nodejs
+    ports:
+      - "3000:3000"
