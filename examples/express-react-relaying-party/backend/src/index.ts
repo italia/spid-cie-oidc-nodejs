@@ -3,6 +3,7 @@ import path from "path";
 import session from "express-session";
 import { makeDefaultConfiguration } from "./Configuration";
 import { ExpressRouter } from "./ExpressRouter";
+import { TrustChain } from "./TrustChain";
 
 const PORT = 3000;
 const ROUTE = "/oidc/rp/";
@@ -62,9 +63,9 @@ app.use(
       // TODO explain better
       trust_marks: [
         {
-          id: "https://www.spid.gov.it/openid-federation/agreement/sp-public/",
+          id: "https://www.spid.gov.it/openid-federation/agreement/sp-private",
           trust_mark:
-            "eyJhbGciOiJSUzI1NiIsImtpZCI6IkZpZll4MDNibm9zRDhtNmdZUUlmTkhOUDljTV9TYW05VGM1bkxsb0lJcmMiLCJ0eXAiOiJ0cnVzdC1tYXJrK2p3dCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvIiwic3ViIjoiaHR0cDovLzEyNy4wLjAuMTozMDAwL29pZGMvcnAvIiwiaWF0IjoxNjQ3OTQ0NjE3LCJpZCI6Imh0dHBzOi8vd3d3LnNwaWQuZ292Lml0L2NlcnRpZmljYXRpb24vcnAiLCJtYXJrIjoiaHR0cHM6Ly93d3cuYWdpZC5nb3YuaXQvdGhlbWVzL2N1c3RvbS9hZ2lkL2xvZ28uc3ZnIiwicmVmIjoiaHR0cHM6Ly9kb2NzLml0YWxpYS5pdC9pdGFsaWEvc3BpZC9zcGlkLXJlZ29sZS10ZWNuaWNoZS1vaWRjL2l0L3N0YWJpbGUvaW5kZXguaHRtbCJ9.SXNGE_WLPVD8kdbJVLlvlOOH_dXGhaGnZsHHimcFPFqQG8H-oYyet_Cl1Lsa92FfKMsngHVBW-xcUZUHkUzYDPL39iZGH6Jdzp8Z2gL5fN-sTbxvUZl5DzdaOluLQIk5lS8AFp-My7P6mLK5nVVhFsF9KWI3Tx0YGrpb4m10lDoohYhzY7cQ5m6UyYDgVqsB9FVBnGeDLMonzYw8qEJp29K7PExilNjg2YI8dwOr5fmmir_70WmYvI2lkOuYY_GyQHWRTV5DxzIfMuk9Nq4xeSjdimDViO6v3mzLCStw60rwib9wiHXt2a-l-nKpSF2QEx-qHCqHnctP1loMQMSU7Q",
+            "eyJhbGciOiJSUzI1NiIsImtpZCI6IkZpZll4MDNibm9zRDhtNmdZUUlmTkhOUDljTV9TYW05VGM1bkxsb0lJcmMiLCJ0eXAiOiJ0cnVzdC1tYXJrK2p3dCJ9.eyJpc3MiOiJodHRwOi8vMTI3LjAuMC4xOjgwMDAvIiwic3ViIjoiaHR0cDovLzEyNy4wLjAuMTozMDAwL29pZGMvcnAvIiwiaWF0IjoxNjQ4MTE5MzE0LCJpZCI6Imh0dHBzOi8vd3d3LnNwaWQuZ292Lml0L2NlcnRpZmljYXRpb24vcnAvcHJpdmF0ZSIsImxvZ29fdXJpIjoiaHR0cHM6Ly93d3cuYWdpZC5nb3YuaXQvdGhlbWVzL2N1c3RvbS9hZ2lkL2xvZ28uc3ZnIiwicmVmIjoiaHR0cHM6Ly9kb2NzLml0YWxpYS5pdC9pdGFsaWEvc3BpZC9zcGlkLXJlZ29sZS10ZWNuaWNoZS1vaWRjL2l0L3N0YWJpbGUvaW5kZXguaHRtbCJ9.pmZPMbIDNNtoBV4BTiRC8Z2pXQnRIGZRBCV2IdCNq-wn5x-KzwfL4D-VK0NPrSB8-4gHW9QgYl7O33qSl4rpgxJPR9ROTqwXR29gmX1Uuw63ptm2Ef_wYUI67A5QaxXU-DXed9vohfxJW5WddywjApGNjxY55Xgy3fUI5IZkwHuOGhDIPbSxJeuOxtE0Gmgi3z2fOTkpkGFj3OXnMA7xPFu8trIxtfIR8i4TVnrndqFJyBh1gk2AJk3gkW7dNsWl7uwWUqGJU_b1B1OoWP1G8z_5Dbdogg0Ixbwc98RRACQDgpXw3811AqBeAn4tLNmtL57eDc5IpqztCv7csdX9LA",
         },
       ],
       callbacks: {
@@ -108,3 +109,9 @@ app.get("*", (req, res) =>
 app.listen(PORT, () => {
   console.log(`Open browser at http://127.0.0.1:${PORT}`);
 });
+
+// TODO jwk loading function default implementation load jwks from disk
+// TODO logger as function default implementation write filesystem rotating log
+// TODO session (create, destroy, update) default implementation ecrypted cookie
+// TODO authorizationRequest access token storage default implementation in memory?
+

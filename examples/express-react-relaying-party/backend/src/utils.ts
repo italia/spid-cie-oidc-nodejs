@@ -34,7 +34,7 @@ export function generateRandomString(length: number) {
   return crypto.randomBytes(length).toString("hex");
 }
 
-// TODO implement
+// SHOULDDO implement
 export function getPrivateJWKforProvider(configuration: Configuration) {
   return configuration.private_jwks.keys[0];
 }

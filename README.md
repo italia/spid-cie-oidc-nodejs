@@ -38,5 +38,5 @@ This software is released under the Apache 2 License by:
 There are these remainders as comments or identifier prefixes:
 
 - TODO -> planned for a milestone
-- SHOULDO -> delayable until needed
+- SHOULDDO -> delayable until needed
 - REPLACEME -> to be implemented

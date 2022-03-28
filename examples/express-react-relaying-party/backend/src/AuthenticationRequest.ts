@@ -8,8 +8,9 @@ import {
 import { Configuration } from "./Configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { dataSource } from "./persistance/data-source";
+import { TrustChain } from "./TrustChain";
 
-export function AuthenticationRequest(
+export async function AuthenticationRequest(
   configuration: Configuration,
   {
     provider,
@@ -32,26 +33,18 @@ export function AuthenticationRequest(
   // TODO validate prompt inculdes supported values (space separated)
   // TODO validate redirect_uri is well formed
 
-  // TODO get trust chain properly
-  const trustChain = {
-    sub: "http://127.0.0.1:8000/oidc/op/",
-  };
-  const authorization_endpoint = "http://127.0.0.1:8000/oidc/op/authorization"; // TODO
-  const token_endpoint = "http://127.0.0.1:8000/oidc/op/token/"; // TODO
-  const userinfo_endpoint = "http://127.0.0.1:8000/oidc/op/userinfo/"; // TODO
-  const revocation_endpoint = "http://127.0.0.1:8000/oidc/op/revocation/"; // TODO
-  const provider_jwks = {
-    // TODO
-    keys: [
-      {
-        kty: "RSA",
-        use: "sig",
-        n: "01_4aI2Lu5ggsElmRkE_S_a83V_szXU0txV4db2hmJ8HR1Y2s7PsZZ5-emGpnTydGrR3n-QExeEEIcFt_a06Ryiink34RQcKoGXUDBMBU0Bu8G7NcZ99YX6yeG9wFi4xs-WviTPmtPqijkz6jm1_ltWDcwbktfkraIRKKggZaEl9ldtsFr2wSpin3AXuGIdeJ0hZqhF92ODBLGjJlaIL9KlwopDy56adReVnraawSdrxmuPGj78IEADNAme2nQNvv9UCu0FkAn5St1bKds3Gpv26W0kjr1gZLsmQrj9lTcDk_KbAwfEY__P7se62kusoSuKMTQqUG1TQpUY7oFGSdw",
-        e: "AQAB",
-        kid: "dB67gL7ck3TFiIAf7N6_7SHvqk0MDYMEQcoGGlkUAAw",
-      },
-    ],
-  };
+  const identityProviderTrustChain = await TrustChain(
+    configuration.client_id,
+    provider,
+    configuration.trust_anchors[0]
+  ); // TODO try with all anchors
+  const {
+    authorization_endpoint,
+    token_endpoint,
+    userinfo_endpoint,
+    revocation_endpoint,
+    jwks: provider_jwks,
+  } = identityProviderTrustChain.entity_configuration.metadata.openid_provider;
   const endpoint = authorization_endpoint;
   const nonce = generateRandomString(32);
   const state = generateRandomString(32);
@@ -59,7 +52,7 @@ export function AuthenticationRequest(
   const response_type = configuration.response_types[0];
   const client_id = configuration.client_id;
   const iat = makeIat();
-  const aud = [trustChain.sub, authorization_endpoint];
+  const aud = [provider, authorization_endpoint];
   const claims = configuration.providers[profile].requestedClaims;
   const iss = client_id;
   const sub = client_id;

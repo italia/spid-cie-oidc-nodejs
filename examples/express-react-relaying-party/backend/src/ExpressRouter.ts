@@ -38,14 +38,15 @@ export function ExpressRouter(configuration: Configuration) {
   // available providers
   // use this list to make create links for logging in ex: <a href="127.0.0.1:3000/oidc/rp/authorization?provider=http://127.0.0.1:8000/oidc/op/">login</a>
   router.get("/" + REPLACEME_PROVIDERS_ROUTE, (req, res) => {
-    // TODO get trust chain
-    res.json([
-      {
-        id: "http://127.0.0.1:8000/oidc/rp/",
-        name: "dev pc",
-        img: "",
-      },
-    ]);
+    res.json(
+      configuration.identity_providers.map((id) => {
+        return {
+          id,
+          name: "",
+          img: "",
+        };
+      })
+    );
   });
 
   // user lands here from a link provided in landing page
@@ -56,7 +57,7 @@ export function ExpressRouter(configuration: Configuration) {
     const redirect_uri = req.query.redirect_uri as string; // TODO validate that is a string or undefined
     const acr_values = req.query.acr_values as string; // TODO validate that is a string or undefined
     const prompt = req.query.prompt as string; // TODO validate that is a string or undefined
-    const authenticationRequest = AuthenticationRequest(configuration, {
+    const authenticationRequest = await AuthenticationRequest(configuration, {
       provider,
       scope,
       redirect_uri,
