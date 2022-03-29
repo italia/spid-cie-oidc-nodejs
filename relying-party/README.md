@@ -15,9 +15,9 @@ More detailed descriptions are provided with [JSDoc](https://jsdoc.app/about-get
 #### Usage
 
 ```typescript
-import { makeDefaultConfiguration, EndpointHandlers } from '@spid-cie-oidc-nodejs/relying-party';
+import { ConfigurationFacade, EndpointHandlers } from '@spid-cie-oidc-nodejs/relying-party';
 
-const configuration = makeDefaultConfiguration({
+const configuration = ConfigurationFacade({
   client_id: "http://127.0.0.1:3000",
   client_name: "My Application",
   contacts: ["me@mail.com"],

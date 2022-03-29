@@ -54,7 +54,7 @@ export async function generateJWKS() {
   const privateJWK = await jose.exportJWK(privateKey);
   privateJWK.kid = kid;
   return {
-    public: { keys: [publicJWK] },
-    private: { keys: [privateJWK] },
+    public_jwks: { keys: [publicJWK] },
+    private_jwks: { keys: [privateJWK] },
   };
 }
