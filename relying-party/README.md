@@ -46,3 +46,9 @@ app.get("/providers", async (req, res) => {
   res.send(body);
 })
 ```
+
+#### Test
+
+Tests can be run with `yarn test`
+
+Code coverage can be checked with `yarn test:coverage`
