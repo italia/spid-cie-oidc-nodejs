@@ -25,6 +25,7 @@ jobs:
           cache: 'yarn'
           cache-dependency-path: 'relying-party/**/yarn.lock'
       - run: yarn
+        working-directory: relying-party
       - run: yarn test
         working-directory: relying-party
 
