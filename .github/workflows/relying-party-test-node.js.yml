@@ -18,7 +18,7 @@ jobs:
         node-version: '16'
         
     - name: Install dependencies and test project
-      working-directory: relying-party
+      working-directory: ./relying-party
       run: |
         yarn
         yarn test
