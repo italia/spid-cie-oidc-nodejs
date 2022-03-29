@@ -2,6 +2,7 @@ import * as jose from "jose";
 import { request } from "undici";
 import { Configuration } from "./Configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
+import { UserInfo } from "./UserInfo";
 import { inferAlgForJWK } from "./utils";
 
 export function UserInfoRequest(
@@ -19,7 +20,7 @@ export function UserInfoRequest(
     const jwe = await response.body.text();
     const jws = await decrypt(configuration, jwe);
     const jwt = await verify(authenticationRequestEntity, jws);
-    return jwt as unknown;
+    return jwt as UserInfo // TODO validate;
   }
   return { doGet };
 }

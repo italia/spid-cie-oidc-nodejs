@@ -10,7 +10,7 @@ const machinery = (async () => {
     trust_anchors: ["http://127.0.0.1:8000/"],
     identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
   });
-  const handlers = EndpointHandlers(configuration);
+  const handlers = await EndpointHandlers(configuration);
   return { configuration, handlers };
 })();
 

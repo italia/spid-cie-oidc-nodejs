@@ -26,7 +26,7 @@ async function main() {
     authorization,
     callback,
     revocation,
-  } = EndpointHandlers(configuration);
+  } = await EndpointHandlers(configuration);
 
   function adaptRequest(req: Request): AgnosticRequest<any> {
     return { query: req.query };
@@ -74,7 +74,7 @@ async function main() {
 
   app.get("/oidc/rp/revocation", async (req, res) => {
     if (!req.session.user_info) throw new Error(); // TODO externalize session retreival
-    const response = await revocation(req.session.user_info);
+    const response = await revocation(req.session.user_info as any);
     req.session.destroy((error) => {
       if (error) throw new Error(); // TODO decide what to do with the error
     });

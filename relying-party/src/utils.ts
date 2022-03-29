@@ -3,14 +3,9 @@ import * as jose from "jose";
 import * as uuid from "uuid";
 import { Configuration } from "./Configuration";
 
-export async function createJWS<Payload extends jose.JWTPayload>(
-  payload: Payload,
-  jwk: jose.JWK
-) {
+export async function createJWS<Payload extends jose.JWTPayload>(payload: Payload, jwk: jose.JWK) {
   const privateKey = await jose.importJWK(jwk, inferAlgForJWK(jwk));
-  const jws = new jose.CompactSign(
-    new TextEncoder().encode(JSON.stringify(payload))
-  )
+  const jws = new jose.CompactSign(new TextEncoder().encode(JSON.stringify(payload)))
     .setProtectedHeader({ alg: "RS256", kid: jwk.kid })
     .sign(privateKey);
   return jws;
@@ -57,4 +52,19 @@ export async function generateJWKS() {
     public_jwks: { keys: [publicJWK] },
     private_jwks: { keys: [privateJWK] },
   };
+}
+
+export function isValidURL(url: string) {
+  try {
+    new URL(url);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+export function isValidEmail(email: string) {
+  return email.match(
+    /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+  );
 }

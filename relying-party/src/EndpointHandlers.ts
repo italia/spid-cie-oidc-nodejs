@@ -2,20 +2,19 @@ import { AccessTokenRequest } from "./AccessTokenRequest";
 import { AuthenticationRequest } from "./AuthenticationRequest";
 import {
   Configuration,
-  validateRelayingPartyConfiguration,
+  validateConfiguration,
 } from "./Configuration";
 import { EntityConfiguration } from "./EntityConfiguration";
 import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { RevocationRequest } from "./RevocationRequest";
+import { UserInfo } from "./UserInfo";
 import { UserInfoRequest } from "./UserInfoRequest";
 import { createJWS } from "./utils";
 
-export function EndpointHandlers(configuration: Configuration) {
-  // TODO crash application if there are errors
-  // TODO report developer friendly errors
-  validateRelayingPartyConfiguration(configuration);
+export async function EndpointHandlers(configuration: Configuration) {
+  await validateConfiguration(configuration);
   return {
     /**
      * it **MUST** be used on the route `${configuration.client_id}./well-known/openid-configuration`
@@ -174,7 +173,7 @@ export function EndpointHandlers(configuration: Configuration) {
      * called from frontend to logout the user
      */
     async revocation(
-      user_info: unknown,
+      user_info: UserInfo,
     ): Promise<AgnosticResponse> {
       const revocationRequest = RevocationRequest(configuration, user_info);
       await revocationRequest.execute();

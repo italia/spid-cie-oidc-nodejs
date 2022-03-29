@@ -2,6 +2,7 @@ import { request } from "undici";
 import { Configuration } from "./Configuration";
 import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
+import { UserInfo } from "./UserInfo";
 import {
   createJWS,
   getPrivateJWKforProvider,
@@ -13,7 +14,7 @@ import {
 // TODO fix, this request is failing
 export function RevocationRequest(
   configuration: Configuration,
-  user_info: unknown
+  user_info: UserInfo
 ) {
   async function execute() {
     const user_identifier = configuration.deriveUserIdentifier(user_info);
