@@ -12,14 +12,18 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [ '12', '14', '16' ]
+    name: Node ${{ matrix.node }} sample
     steps:
-    - uses: actions/setup-node@v2
-      with:
-        node-version: '16'
-        
-    - name: Install dependencies and test project
-      working-directory: ./relying-party
-      run: |
-        yarn
-        yarn test
+      - uses: actions/checkout@v2
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node }}
+          cache: 'yarn'
+          cache-dependency-path: 'relying-party/**/yarn.lock'
+      - run: yarn
+      - run: yarn test
 
