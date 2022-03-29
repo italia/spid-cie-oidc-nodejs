@@ -44,3 +44,11 @@ There are these remainders as comments or identifier prefixes:
 - TODO -> planned for a milestone
 - REPLACEME -> to be implemented
 - SHOULDDO -> delayable until needed
+
+### Npm package publishing
+
+A [github action](https://github.com/features/actions) is configured [here](.github\workflows\npm-publish.yml) to publish the package automatically.
+
+To publish a new version of the package create a new release [here](https://github.com/italia/spid-cie-oidc-nodejs/releases/new).
+
+To change npmjs secret ([article](https://dev.to/astagi/publish-to-npm-using-github-actions-23fn)).
