@@ -10,30 +10,30 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./relying-party
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: 16
-      - run: yarn ci
+      - run: yarn
+        working-directory: relying-party
       - run: yarn test
+        working-directory: relying-party
 
   publish-npm:
     needs: build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./relying-party
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: yarn ci
+      - run: yarn
+        working-directory: relying-party
+      - run: yarn build
+        working-directory: relying-party
       - run: npm publish
+        working-directory: relying-party
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
