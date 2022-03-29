@@ -68,3 +68,17 @@ export function isValidEmail(email: string) {
     /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
   );
 }
+
+export function isString(value: unknown): value is string {
+  return typeof value === "string";
+}
+
+export function isUndefined(value: unknown): value is undefined {
+  return value === undefined;
+}
+
+// TODO do something with them
+export function REPLACEME_logError(error: unknown) {}
+
+// TODO do something with them
+export function REPLACEME_logAudit(rquestOrResponse: unknown) {}

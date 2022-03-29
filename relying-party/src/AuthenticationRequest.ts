@@ -1,10 +1,5 @@
 import crypto from "crypto";
-import {
-  createJWS,
-  generateRandomString,
-  getPrivateJWKforProvider,
-  makeIat,
-} from "./utils";
+import { createJWS, generateRandomString, getPrivateJWKforProvider, makeIat } from "./utils";
 import { Configuration } from "./Configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { dataSource } from "./persistance/data-source";
@@ -57,52 +52,46 @@ export async function AuthenticationRequest(
   const iss = client_id;
   const sub = client_id;
   const jwk = getPrivateJWKforProvider(configuration);
-  async function asGetRequest() {
-    const request = await createJWS(
-      {
-        scope,
-        redirect_uri,
-        response_type,
-        nonce,
-        state,
-        client_id,
-        endpoint,
-        acr_values,
-        iat,
-        aud,
-        claims,
-        prompt,
-        code_challenge,
-        code_challenge_method,
-        iss,
-        sub,
-      },
-      jwk
-    );
-    const url = `${authorization_endpoint}?${new URLSearchParams({
+  const request = await createJWS(
+    {
       scope,
       redirect_uri,
+      response_type,
       nonce,
       state,
-      response_type,
       client_id,
       endpoint,
       acr_values,
-      iat: iat.toString(),
-      aud: JSON.stringify(aud),
-      claims: JSON.stringify(claims),
+      iat,
+      aud,
+      claims,
+      prompt,
       code_challenge,
       code_challenge_method,
-      prompt,
-      request,
-    })}`;
-    return { url };
-  }
-  async function asPostRequest() {
-    // TODO implement
-  }
-  function asEntity() {
-    return dataSource.getRepository(AuthenticationRequestEntity).create({
+      iss,
+      sub,
+    },
+    jwk
+  );
+  const url = `${authorization_endpoint}?${new URLSearchParams({
+    scope,
+    redirect_uri,
+    nonce,
+    state,
+    response_type,
+    client_id,
+    endpoint,
+    acr_values,
+    iat: iat.toString(),
+    aud: JSON.stringify(aud),
+    claims: JSON.stringify(claims),
+    code_challenge,
+    code_challenge_method,
+    prompt,
+    request,
+  })}`;
+  await dataSource.manager.save(
+    dataSource.getRepository(AuthenticationRequestEntity).create({
       state,
       code_verifier,
       redirect_uri,
@@ -110,24 +99,17 @@ export async function AuthenticationRequest(
       userinfo_endpoint,
       revocation_endpoint,
       provider_jwks,
-    });
-  }
-  return {
-    asGetRequest,
-    asPostRequest,
-    asEntity,
-  };
+    })
+  );
+  return url;
 }
 
-// TODO support more code challange methods
+// SHOULDDO support more code challange methods
 function getPKCE() {
-  const REPLACEME_length = 64; // TODO read from config
-  const code_verifier = generateRandomString(REPLACEME_length);
-  const code_challenge_method = "S256"; // TODO read from config
-  const code_challenge = crypto
-    .createHash("sha256")
-    .update(code_verifier)
-    .digest("base64url");
+  const length = 64; // SHOULDDO read from config
+  const code_verifier = generateRandomString(length);
+  const code_challenge_method = "S256"; // SHOULDDO read from config
+  const code_challenge = crypto.createHash("sha256").update(code_verifier).digest("base64url");
   return {
     code_verifier,
     code_challenge,

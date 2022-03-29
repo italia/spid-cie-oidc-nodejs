@@ -5,12 +5,11 @@ import { AuthenticationRequestEntity } from "./persistance/entity/Authentication
 import { UserInfo } from "./UserInfo";
 import { inferAlgForJWK } from "./utils";
 
-export function UserInfoRequest(
+export async function UserInfoRequest(
   configuration: Configuration,
   authenticationRequestEntity: AuthenticationRequestEntity,
   access_token: string
 ) {
-  async function doGet() {
     // TODO ensure timeout and ssl is used when doing get request
     const url = authenticationRequestEntity.userinfo_endpoint;
     const response = await request(url, {
@@ -21,8 +20,6 @@ export function UserInfoRequest(
     const jws = await decrypt(configuration, jwe);
     const jwt = await verify(authenticationRequestEntity, jws);
     return jwt as UserInfo // TODO validate;
-  }
-  return { doGet };
 }
 
 async function decrypt(configuration: Configuration, jwe: string) {

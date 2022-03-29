@@ -34,8 +34,10 @@ async function main() {
 
   function adaptReponse(response: AgnosticResponse, res: Response) {
     res.status(response.status);
-    for (const [headerName, headerValue] of Object.entries(response.headers)) {
-      res.set(headerName, headerValue);
+    if (response.headers) {
+      for (const [headerName, headerValue] of Object.entries(response.headers)) {
+        res.set(headerName, headerValue);
+      }
     }
     res.send(response.body);
   }

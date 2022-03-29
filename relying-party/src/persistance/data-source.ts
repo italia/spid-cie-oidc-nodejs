@@ -16,9 +16,4 @@ export const dataSource = new DataSource({
 });
 
 // TODO manage error
-dataSource.initialize().then(
-  () => {
-    console.log("database connected");
-  },
-  (error) => console.log("database error", error)
-);
+dataSource.initialize();
