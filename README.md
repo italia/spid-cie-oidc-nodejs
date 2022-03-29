@@ -1,4 +1,4 @@
-# SPID/CIE OIDC Federation Relying Party, for Node.js
+# SPID/CIE OIDC Federation, for Node.js
 
 [![Get invited](https://slack.developers.italia.it/badge.svg)](https://slack.developers.italia.it/)
 [![Join the #spid openid](https://img.shields.io/badge/Slack%20channel-%23spid%20openid-blue.svg)](https://developersitalia.slack.com/archives/C7E85ED1N/)
@@ -6,7 +6,11 @@
 > ⚠️ This project is a WiP
 
 
-The SPID/CIE OIDC Federation Relying Party, for in Node.js
+The SPID/CIE OIDC Federation, for in Node.js
+
+## Packages
+
+- [relying party](relying-party/README.md)
 
 ## Example projects
 
@@ -38,5 +42,5 @@ This software is released under the Apache 2 License by:
 There are these remainders as comments or identifier prefixes:
 
 - TODO -> planned for a milestone
-- SHOULDDO -> delayable until needed
 - REPLACEME -> to be implemented
+- SHOULDDO -> delayable until needed

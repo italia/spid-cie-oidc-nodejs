@@ -9,12 +9,11 @@ import {
 } from "@spid-cie-oidc-nodejs/relying-party";
 
 const PORT = 3000;
-const CLIENT_ID = `http://127.0.0.1:${PORT}/oidc/rp/`;
 
 // TODO explain that this is only a helper
 // TODO see Configuration for more details
 const configuration = makeDefaultConfiguration({
-  client_id: CLIENT_ID,
+  client_id: `http://127.0.0.1:${PORT}/oidc/rp/`,
   client_name: "My Application",
   contacts: ["me@mail.com"],
   trust_anchors: ["http://127.0.0.1:8000/"],
