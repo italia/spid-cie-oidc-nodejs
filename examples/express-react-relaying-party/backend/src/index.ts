@@ -1,13 +1,12 @@
 import express, { Request, Response } from "express";
-import * as jose from "jose";
 import path from "path";
 import session from "express-session";
-import { makeDefaultConfiguration } from "./Configuration";
 import {
+  makeDefaultConfiguration,
   AgnosticRequest,
   AgnosticResponse,
   EndpointHandlers,
-} from "./EndpointHandlers";
+} from "@spid-cie-oidc-nodejs/relying-party";
 
 const PORT = 3000;
 const CLIENT_ID = `http://127.0.0.1:${PORT}/oidc/rp/`;
@@ -121,24 +120,6 @@ app.get("/oidc/rp/revocation", async (req, res) => {
 app.get("/oidc/rp/.well-known/openid-federation", async (req, res) => {
   const response = await handlers.entityConfiguration();
   adaptReponse(response, res);
-});
-
-// TODO move elsewhere
-app.get("/oidc/rp/configuration-helper", async (req, res) => {
-  const { publicKey, privateKey } = await jose.generateKeyPair("RS256");
-  const publicJWK = await jose.exportJWK(publicKey);
-  const kid = await jose.calculateJwkThumbprint(publicJWK);
-  publicJWK.kid = kid;
-  const privateJWK = await jose.exportJWK(privateKey);
-  privateJWK.kid = kid;
-  res.send(`
-    <h1>JWK generation utility</h1>
-    <p>reload page to get a fresh one</p>
-    <p>public key</p>
-    <pre>${JSON.stringify(publicJWK, null, 2)}</pre>
-    <p>private key</p>
-    <pre>${JSON.stringify(privateJWK, null, 2)}</pre>
-  `);
 });
 
 // this endpoint is outside of the oidc lib

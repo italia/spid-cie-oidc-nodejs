@@ -45,3 +45,16 @@ export function inferAlgForJWK(jwk: jose.JWK) {
   // TODO support more types
   throw new Error("unsupported key type");
 }
+
+export async function generateJWKS() {
+  const { publicKey, privateKey } = await jose.generateKeyPair("RS256");
+  const publicJWK = await jose.exportJWK(publicKey);
+  const kid = await jose.calculateJwkThumbprint(publicJWK);
+  publicJWK.kid = kid;
+  const privateJWK = await jose.exportJWK(privateKey);
+  privateJWK.kid = kid;
+  return {
+    public: { keys: [publicJWK] },
+    private: { keys: [privateJWK] },
+  };
+}

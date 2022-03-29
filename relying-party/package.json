@@ -1,0 +1,38 @@
+{
+  "name": "@spid-cie-oidc-nodejs/relying-party",
+  "version": "0.0.0",
+  "description": "openid federation relying party implementation",
+  "main": "lib/index.js",
+  "module": "lib/index.esm.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "lib",
+    "package.json"
+  ],
+  "repository": "https://github.com/italia/spid-cie-oidc-nodejs",
+  "author": "Frederik Batuna <frederik.batuna@smc.it>",
+  "license": "Apache-2.0",
+  "private": false,
+  "scripts": {
+    "build": "rollup -c",
+    "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js"
+  },
+  "dependencies": {
+    "jose": "^4.6.0",
+    "lodash": "^4.17.21",
+    "reflect-metadata": "^0.1.13",
+    "sqlite3": "^4.0.3",
+    "typeorm": "^0.3.0",
+    "undici": "^4.16.0",
+    "uuid": "^8.3.2"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.180",
+    "@types/node": "^16.11.10",
+    "@types/uuid": "^8.3.4",
+    "rollup": "^2.70.1",
+    "rollup-plugin-dts": "^4.2.0",
+    "rollup-plugin-typescript2": "^0.31.2",
+    "typescript": "^4.6.3"
+  }
+}
