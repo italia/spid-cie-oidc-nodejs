@@ -10,21 +10,14 @@ import { cloneDeep, difference, intersection } from "lodash";
 
 // SHOULDDO implement arbitray length tst chain validation
 // TODO check authority hints
-export async function TrustChain(
-  relying_party: string,
-  identity_provider: string,
-  trust_anchor: string
-) {
-  const relying_party_entity_configuration =
-    await getEntityConfiguration<RelyingPartyEntityConfiguration>(
-      relying_party
-    );
-  const identity_provider_entity_configuration =
-    await getEntityConfiguration<IdentityProviderEntityConfiguration>(
-      identity_provider
-    );
-  const trust_anchor_entity_configuration =
-    await getEntityConfiguration<TrustAnchorEntityConfiguration>(trust_anchor);
+export async function TrustChain(relying_party: string, identity_provider: string, trust_anchor: string) {
+  const relying_party_entity_configuration = await getEntityConfiguration<RelyingPartyEntityConfiguration>(
+    relying_party
+  );
+  const identity_provider_entity_configuration = await getEntityConfiguration<IdentityProviderEntityConfiguration>(
+    identity_provider
+  );
+  const trust_anchor_entity_configuration = await getEntityConfiguration<TrustAnchorEntityConfiguration>(trust_anchor);
   const relying_party_entity_statement = await getEntityStatement(
     relying_party_entity_configuration,
     trust_anchor_entity_configuration
@@ -33,10 +26,7 @@ export async function TrustChain(
     identity_provider_entity_configuration,
     trust_anchor_entity_configuration
   );
-  const exp = Math.min(
-    relying_party_entity_statement.exp,
-    identity_provider_entity_statement.exp
-  );
+  const exp = Math.min(relying_party_entity_statement.exp, identity_provider_entity_statement.exp);
   const metadata = applyMetadataPolicy(
     identity_provider_entity_configuration.metadata,
     identity_provider_entity_statement.metadata_policy
@@ -52,9 +42,7 @@ export async function TrustChain(
 }
 
 async function getEntityStatement(
-  descendant:
-    | RelyingPartyEntityConfiguration
-    | IdentityProviderEntityConfiguration,
+  descendant: RelyingPartyEntityConfiguration | IdentityProviderEntityConfiguration,
   superior: TrustAnchorEntityConfiguration
 ): Promise<EntityStatement> {
   const response = await request(
@@ -66,11 +54,7 @@ async function getEntityStatement(
   if (response.statusCode !== 200) {
     throw new Error(); // TODO better error reporting
   }
-  if (
-    !response.headers["content-type"]?.startsWith(
-      "application/entity-statement+jwt"
-    )
-  ) {
+  if (!response.headers["content-type"]?.startsWith("application/entity-statement+jwt")) {
     throw new Error(); // TODO better error reporting
   }
   const jws = await response.body.text();
@@ -93,23 +77,11 @@ async function getEntityConfiguration<T>(url: string): Promise<T> {
   if (response.statusCode !== 200) {
     throw new Error(); // TODO better error reporting
   }
-  if (
-    !response.headers["content-type"]?.startsWith(
-      "application/entity-statement+jwt"
-    )
-  ) {
+  if (!response.headers["content-type"]?.startsWith("application/entity-statement+jwt")) {
     throw new Error(); // TODO better error reporting
   }
   const jws = await response.body.text();
-  const decoded: any = jose.decodeJwt(jws);
-  const { payload } = await jose.compactVerify(jws, async (header) => {
-    if (!header.kid) throw new Error("missing kid in header"); // TODO better error report
-    const jwk = decoded.jwks.keys.find((key: any) => key.kid === header.kid);
-    if (!jwk) throw new Error("no matching key with kid found"); // TODO better error report
-    return await jose.importJWK(jwk, inferAlgForJWK(jwk));
-  });
-  const entity_configuration = JSON.parse(new TextDecoder().decode(payload));
-  // TODO verify schema (verify that has trust_marks)
+  const entity_configuration = verifyEntityConfiguration(jws);
   return entity_configuration;
 }
 
@@ -145,10 +117,7 @@ function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
     if (!(parentField in metadata)) continue;
     for (const [childField, childPolicy] of Object.entries(parentPolicy)) {
       if (childPolicy.add) {
-        metadata[parentField][childField] = [
-          ...(metadata[parentField][childField] ?? []),
-          childPolicy.add,
-        ];
+        metadata[parentField][childField] = [...(metadata[parentField][childField] ?? []), childPolicy.add];
       }
       if (childPolicy.value) {
         metadata[parentField][childField] = childPolicy.value;
@@ -159,18 +128,12 @@ function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
         }
       }
       if (childPolicy.subset_of) {
-        if (
-          intersection(metadata[parentField][childField], childPolicy.subset_of)
-            .length === 0
-        ) {
+        if (intersection(metadata[parentField][childField], childPolicy.subset_of).length === 0) {
           delete metadata[parentField][childField];
         }
       }
       if (childPolicy.superset_of) {
-        if (
-          difference(metadata[parentField][childField], childPolicy.superset_of)
-            .length === 0
-        ) {
+        if (difference(metadata[parentField][childField], childPolicy.superset_of).length === 0) {
           delete metadata[parentField][childField];
         }
       }
@@ -182,4 +145,17 @@ function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
     }
   }
   return metadata;
+}
+
+export async function verifyEntityConfiguration(jws: string) {
+  const decoded: any = jose.decodeJwt(jws);
+  const { payload } = await jose.compactVerify(jws, async (header) => {
+    if (!header.kid) throw new Error("missing kid in header"); // TODO better error report
+    const jwk = decoded.jwks.keys.find((key: any) => key.kid === header.kid);
+    if (!jwk) throw new Error("no matching key with kid found"); // TODO better error report
+    return await jose.importJWK(jwk, inferAlgForJWK(jwk));
+  });
+  const entity_configuration = JSON.parse(new TextDecoder().decode(payload));
+  // TODO verify schema (verify that has trust_marks)
+  return entity_configuration;
 }

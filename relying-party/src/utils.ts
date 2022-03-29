@@ -18,12 +18,12 @@ export async function createJWS<Payload extends jose.JWTPayload>(
 
 // now timestamp in seconds
 export function makeIat() {
-  return Date.now() / 1000;
+  return Math.floor(Date.now() / 1000);
 }
 
 // now + delta timestamp in seconds
 export function makeExp(deltaSeconds = 33 * 60) {
-  return makeIat() + deltaSeconds;
+  return Math.floor(makeIat() + deltaSeconds);
 }
 
 export function makeJti() {

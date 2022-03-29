@@ -8,11 +8,11 @@ It is written in [TypeScript](https://www.typescriptlang.org/), the typings are 
 
 More detailed descriptions are provided with [JSDoc](https://jsdoc.app/about-getting-started.html), use an IDE like [vscode](https://code.visualstudio.com/docs/editor/intellisense) to see them.
 
-#### Installation
+### Installation
 
 `npm install @spid-cie-oidc-nodejs/relying-party`
 
-#### Usage
+### Usage
 
 ```typescript
 import { ConfigurationFacade, EndpointHandlers } from '@spid-cie-oidc-nodejs/relying-party';
@@ -47,7 +47,7 @@ app.get("/providers", async (req, res) => {
 })
 ```
 
-#### Test
+### Tests
 
 Tests can be run with `yarn test`
 
