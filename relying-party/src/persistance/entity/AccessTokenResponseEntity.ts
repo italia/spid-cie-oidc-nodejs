@@ -1,11 +1,4 @@
-import {
-  Entity,
-  Column,
-  ManyToOne,
-  UpdateDateColumn,
-  CreateDateColumn,
-  PrimaryGeneratedColumn,
-} from "typeorm";
+import { Entity, Column, ManyToOne, UpdateDateColumn, CreateDateColumn, PrimaryGeneratedColumn } from "typeorm";
 import { AuthenticationRequestEntity } from "./AuthenticationRequestEntity";
 
 @Entity()
