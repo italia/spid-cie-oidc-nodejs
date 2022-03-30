@@ -8,6 +8,8 @@
 
 The SPID/CIE OIDC Federation, for in Node.js
 
+![preview](preview.gif)
+
 ## Packages
 
 - [relying party](relying-party/README.md)
