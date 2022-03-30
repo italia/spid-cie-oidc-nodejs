@@ -27,7 +27,7 @@ A Node.js library that exposes utility functions to configure your web-applicati
 
 ## Example projects
 
-### [**Example Express application (and React)**](examples/express-react-relaying-party/README.md)
+### [**Example Express application (and React)**](examples/express-react-relying-party/README.md)
 
 An example full web server built with Express v4 with the Relying Party library manually integrated (Passport or similar facilities have not been used).
 
@@ -50,15 +50,7 @@ Please open an issue if you've discoveerd a bug or if you want to ask some featu
 
 This software is released under the Apache 2 License by:
 
-- Frederik Batuna <frederik.batuna@smc.it>.
-
-## Notes for mantainers
-
-There are these remainders as comments or identifier prefixes:
-
-- TODO -> planned for a milestone
-- REPLACEME -> to be implemented
-- SHOULDDO -> delayable until needed
+- Frederik Batuna <frederik.batuna@smc.it>
 
 ### Npm package publishing
 

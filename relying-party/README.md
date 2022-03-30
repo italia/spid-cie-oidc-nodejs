@@ -38,7 +38,7 @@ const {
 
 These endpoints must be exposed by your application. (see JSDoc for the purpose of each endpoint)
 
-Expressjs example: (see full example [here](../examples/express-react-relaying-party/backend/src/index.ts))
+Expressjs example: (see full example [here](../examples/express-react-relying-party/backend/src/index.ts))
 
 ```typescript
 app.get("/providers", async (req, res) => {

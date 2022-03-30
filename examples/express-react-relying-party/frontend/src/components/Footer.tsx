@@ -1,7 +1,6 @@
 import React from "react";
+import { FormattedMessage } from "react-intl";
 import sprite from "./sprite.svg";
-
-const REPLACEME_translate = (text: string) => text;
 
 export function Footer() {
   return (
@@ -18,10 +17,9 @@ export function Footer() {
                     </svg>
                     <div className="it-brand-text">
                       <h2 className="no_toc">
-                        {REPLACEME_translate("OIDC Relying Party")}
+                      <FormattedMessage id="title" />
                       </h2>
                       <h3 className="no_toc d-none d-md-block">
-                        {REPLACEME_translate("OIDC Relying Party")}
                       </h3>
                     </div>
                   </a>

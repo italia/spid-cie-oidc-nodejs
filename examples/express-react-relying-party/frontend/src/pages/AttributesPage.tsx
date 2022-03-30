@@ -1,8 +1,7 @@
 import React from "react";
+import { FormattedMessage } from "react-intl";
 import { useQuery } from "react-query";
 import { useNavigate } from "react-router-dom";
-
-const REPLACEME_translate = (text: string) => text;
 
 export function AttributesPage() {
   const user_info = useQuery("user_info", async () => {
@@ -27,7 +26,7 @@ export function AttributesPage() {
                 <div className="row h-100">
                   <div className="col-12 pl-lg-4">
                     <h4 className="text-left">
-                      {REPLACEME_translate("OIDC attributes")}
+                      <FormattedMessage id="oidc-attributes" />
                     </h4>
 
                     <dl>
@@ -44,7 +43,7 @@ export function AttributesPage() {
                         )}
                     </dl>
                     <button onClick={logout} className="btn btn-secondary">
-                      Log out
+                      <FormattedMessage id="oidc-logout" />
                     </button>
                   </div>
                 </div>

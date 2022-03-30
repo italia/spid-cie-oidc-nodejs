@@ -1,0 +1,14 @@
+{
+  "title": "OIDC Relying Party Node.js",
+  "follow-us": "Seguici",
+  "search": "Cerca",
+  "oidc-attributes": "Informazioni utente",
+  "oidc-logout": "Logout",
+  "welcome": "Benvenuto",
+  "login-with-spid": "Entra con SPID",
+  "login-with-cie": "Entra con CIE",
+  "spid-explanation": "SPID è il sistema di accesso che permette di usare servizi online con un unica identità digitale. Se hai già la tua identità digitale entra con il tuo Identity Provider. Se non hai ancora la tua identità digitale scegli lo SPID Digital Identity con il quale ottenerla.",
+  "cie-explanation": "Se hai la nuova Electronic Identity Card (CIE) puoi usarla per accedere ai servizi online della pubblica amministrazione. Hai bisongo dei codici PIN e PUK: la prima parte dei due codici è nella ricevuta della richiesta CIE, la seconda parte viene inviata insieme al CIE. Visita sito ufficiale di CIE id per ottenere software, documentazione e tutorial.",
+  "invalid_request": "Errore nella richiesta",
+  "Authentication request rejected by user": "Richiseta di autenticazione cancellata dall'utente"
+}

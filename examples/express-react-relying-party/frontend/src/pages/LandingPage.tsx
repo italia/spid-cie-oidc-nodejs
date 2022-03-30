@@ -4,11 +4,7 @@ import spidButtonIcon from "../components/spid-ico-circle-bb.svg";
 import cieButtonIcon from "../components/cie-ico-circle-bb.svg";
 import itProviderIcon from "../components/spid-logo.svg";
 import { useQuery } from "react-query";
-
-const REPLACEME_translate = (text: string) => text;
-function ReplacemeTranslate(props: { children: React.ReactNode }) {
-  return props.children as any;
-}
+import { FormattedMessage } from "react-intl";
 
 export function LandingPage() {
   const providers = useQuery("providers", async () => {
@@ -29,33 +25,15 @@ export function LandingPage() {
                   <div className="col-12 pl-lg-4">
                     <div className="row p-3">
                       <h3 className="text-left">
-                        {REPLACEME_translate("Welcome")}
+                        <FormattedMessage id="welcome" />
                       </h3>
-
                       <p className="card-title">
-                        <ReplacemeTranslate>
-                          SPID is the access system that allows you to use
-                          online services with a unique digital identity. If you
-                          already have a digital identity, login with your
-                          Identity Provider. If you don’t have a digital
-                          identity yet, choose an Identity Provider where obtain
-                          your SPID Digital Identity.
-                        </ReplacemeTranslate>
+                        <FormattedMessage id="spid-explanation"/>
                       </p>
-
                       <p className="card-title">
-                        <ReplacemeTranslate>
-                          If you have the new Electronic Identity Card (CIE) you
-                          can use it to access the services online Public
-                          Administration. You need the PIN and PUK codes: the
-                          first part of the two codes is in the receipt of the
-                          CIE request, the second part is delivered together
-                          with the CIE. Visit the official site of CIE id to get
-                          the software, documentation and tutorial.
-                        </ReplacemeTranslate>
+                      <FormattedMessage id="cie-explanation"/>
                       </p>
                     </div>
-
                     <div className="row mt-3">
                       <div className="col">
                         <span className="badge badge-grey-unical square-corners mb-3 mr-2 ml-0 pr-10 p-2 mw-100">
@@ -72,7 +50,7 @@ export function LandingPage() {
                               <img src={spidButtonIcon} alt="" />
                             </span>
                             <span className="italia-it-button-text">
-                              {REPLACEME_translate("Entra con SPID")}
+                              <FormattedMessage id="login-with-spid" />
                             </span>
                           </a>
                           {isSpidButtonOpen && (
@@ -119,7 +97,7 @@ export function LandingPage() {
                               <img src={cieButtonIcon} alt="" />
                             </span>
                             <span className="italia-it-button-text">
-                              {REPLACEME_translate("Entra con CIE")}
+                              <FormattedMessage id="login-with-cie" />
                             </span>
                           </a>
                         </span>

@@ -1,7 +1,6 @@
 import React from "react";
+import { FormattedMessage } from "react-intl";
 import { useSearchParams } from "react-router-dom";
-
-const REPLACEME_translate = (text: string) => text;
 
 export function ErrorPage() {
   let [searchParams] = useSearchParams();
@@ -18,9 +17,11 @@ export function ErrorPage() {
                   <div className="col-12 col-lg-6 pl-lg-4">
                     <div className="callout danger">
                       <div className="callout-title">
-                        {REPLACEME_translate(error)}
+                        <FormattedMessage id={error}/>
                       </div>
-                      <p>{REPLACEME_translate(error_description)}</p>
+                      <p>
+                        <FormattedMessage id={error_description} />
+                      </p>
                     </div>
                   </div>
                 </div>

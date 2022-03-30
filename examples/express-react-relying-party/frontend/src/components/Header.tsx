@@ -1,8 +1,6 @@
 import React from "react";
+import { FormattedMessage } from "react-intl";
 import sprite from "./sprite.svg";
-
-const REPLACEME_translate = (text: string) => text;
-const REPLACEME_url = (src: string) => src;
 
 export function Header() {
   return (
@@ -16,7 +14,7 @@ export function Header() {
                   className="d-none d-lg-block navbar-brand"
                   href="https://www.spid.gov.it/"
                 >
-                  {REPLACEME_translate("OIDC Relying Party")}
+                  <FormattedMessage id="title" />
                 </a>
                 <div className="nav-mobile">
                   <nav>
@@ -28,7 +26,9 @@ export function Header() {
                       aria-expanded="false"
                       aria-controls="menu-principale"
                     >
-                      <span>{REPLACEME_translate("OIDC Relying Party")}</span>
+                      <span>
+                        <FormattedMessage id="title" />
+                      </span>
                       <svg className="icon">
                         <use xlinkHref={sprite + "#it-expand"}></use>
                       </svg>
@@ -82,19 +82,12 @@ export function Header() {
                       </div>
                     </div>
                   </div>
-
-                  <div className="it-access-top-wrapper">
-                    <button className="btn btn-primary btn-sm" type="button">
-                      {REPLACEME_translate("Accedi")}
-                    </button>
-                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
       <div className="it-nav-wrapper">
         <div className="it-header-center-wrapper">
           <div className="container">
@@ -108,17 +101,19 @@ export function Header() {
                       </svg>
                       <div className="it-brand-text">
                         <h2 className="no_toc">
-                          {REPLACEME_translate("OIDC Relying Party")}
+                          <FormattedMessage id="title" />
                         </h2>
                         <h3 className="no_toc d-none d-md-block">
-                          {REPLACEME_translate("OIDC Relying Party")}
+                          <FormattedMessage id="title" />
                         </h3>
                       </div>
                     </a>
                   </div>
                   <div className="it-right-zone">
                     <div className="it-socials d-none d-md-flex">
-                      <span>{REPLACEME_translate("Seguici su")}</span>
+                      <span>
+                        <FormattedMessage id="follow-us" />
+                      </span>
                       <ul>
                         <li>
                           <a href="#" aria-label="Facebook" target="_blank">
@@ -144,12 +139,10 @@ export function Header() {
                       </ul>
                     </div>
                     <div className="it-search-wrapper">
-                      <span className="d-none d-md-block">Cerca</span>
-                      <a
-                        className="search-link rounded-icon"
-                        href="#"
-                        aria-label={REPLACEME_translate("Cerca")}
-                      >
+                      <span className="d-none d-md-block">
+                        <FormattedMessage id="search" />
+                      </span>
+                      <a className="search-link rounded-icon" href="#">
                         <svg className="icon">
                           <use xlinkHref={sprite + "#it-search"}></use>
                         </svg>

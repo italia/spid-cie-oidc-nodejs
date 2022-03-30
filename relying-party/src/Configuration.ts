@@ -4,14 +4,14 @@ import { isEqual, difference, uniq } from "lodash";
 import { UserInfo } from "./UserInfoRequest";
 
 /**
- * This configuration must be done on the relaying party side
+ * This configuration must be done on the relying party side
  *
  * see field descriptions to understand how to customize relying party
  */
 export type Configuration = {
   /**
-   * Url that identifies this relaying party.
-   * The relaying party must be reachable on this url from outside
+   * Url that identifies this relying party.
+   * The relying party must be reachable on this url from outside
    */
   client_id: string;
   /** himan readable name of this application */
