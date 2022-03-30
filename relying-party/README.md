@@ -90,27 +90,34 @@ app.get("/oidc/rp/.well-known/openid-federation", (req, res) => {
 });
 ```
 
-> **⚠️ Attention!**
->
-> It may be that your Client ID / Entity Identifier contains a path:
->
->     https://example.com/my/application
->                        ╰─┬───────────╯
->                         Path
->
-> In this case you _SHOULD_ serve your Entity Configuration endpoint as follows:
->
->     https://example.com/.well-known/openid-federation/my/application
->                        ╰─┬──────────────────────────╯╰─┬───────────╯
->                         Endpoint Path                 Path
->
-> But in order to support multi-tenancy the [OpenID Connect specification](https://openid.net/specs/openid-connect-federation-1_0.html#federation_configuration) allows for an alternative structure, disregarding [RFC 8615 (Well-Known URIs)](https://www.rfc-editor.org/rfc/rfc8615):
->
->     https://example.com/my/application/.well-known/openid-federation
->                        ╰─┬───────────╯╰─┬──────────────────────────╯
->                         Path           Endpoint Path                
->
-> Since this secondary form is not mandatory and callers are only _RECOMMENDED_ to support it, if you can install the endpoint as a root `/.well-known` path that should be your first option.
+<details>
+
+<summary>
+<strong>⚠️ More details regarding Well-Known paths</strong>
+</summary>
+
+
+It may be that your Client ID / Entity Identifier contains a path:
+
+    https://example.com/my/application
+                       ╰─┬───────────╯
+                        Path
+
+In this case you _SHOULD_ serve your Entity Configuration endpoint as follows:
+
+    https://example.com/.well-known/openid-federation/my/application
+                       ╰─┬──────────────────────────╯╰─┬───────────╯
+                        Endpoint Path                 Path
+
+But in order to support multi-tenancy the [OpenID Connect specification](https://openid.net/specs/openid-connect-federation-1_0.html#federation_configuration) allows for an alternative structure, disregarding [RFC 8615 (Well-Known URIs)](https://www.rfc-editor.org/rfc/rfc8615):
+
+    https://example.com/my/application/.well-known/openid-federation
+                       ╰─┬───────────╯╰─┬──────────────────────────╯
+                        Path           Endpoint Path                
+
+Since this secondary form is not mandatory and callers are only _RECOMMENDED_ to support it, if you can install the endpoint as a root `/.well-known` path that should be your first option.
+
+</details>
 
 #### `providerList` Endpoint
 
