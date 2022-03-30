@@ -11,17 +11,24 @@ import { BadRequestError, isString, isUndefined } from "./utils";
 
 export async function EndpointHandlers(configuration: Configuration) {
   await validateConfiguration(configuration);
+
   return {
     /**
      * it **MUST** be used on the route `${configuration.client_id}./well-known/openid-configuration`
      *
      * used during onboarding with federation
      */
-    async entityConfiguration(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
+    async entityConfiguration(
+      request: AgnosticRequest<{}>
+    ): Promise<AgnosticResponse> {
       configuration.logger("info", { request });
       try {
         const jws = await EntityConfiguration(configuration);
-        const response = { status: 200, headers: { "Content-Type": "application/entity-statement+jwt" }, body: jws };
+        const response = {
+          status: 200,
+          headers: { "Content-Type": "application/entity-statement+jwt" },
+          body: jws,
+        };
         configuration.logger("info", { response });
         return response;
       } catch (error) {
@@ -29,6 +36,7 @@ export async function EndpointHandlers(configuration: Configuration) {
         return { status: 500 };
       }
     },
+
     /**
      * lists available identity providers
      *
@@ -36,7 +44,9 @@ export async function EndpointHandlers(configuration: Configuration) {
      *
      * @example <a href="127.0.0.1:3000/oidc/rp/authorization?provider=http://127.0.0.1:8000/oidc/op/">login</a>
      */
-    async providerList(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
+    async providerList(
+      request: AgnosticRequest<{}>
+    ): Promise<AgnosticResponse> {
       configuration.logger("debug", { request });
       try {
         const response = {
@@ -55,6 +65,7 @@ export async function EndpointHandlers(configuration: Configuration) {
         return { status: 500 };
       }
     },
+
     /**
      * user lands here from a link provided in login page
      *
@@ -82,7 +93,9 @@ export async function EndpointHandlers(configuration: Configuration) {
         }
         const redirect_uri = request.query.redirect_uri;
         if (!(isString(redirect_uri) || isUndefined(redirect_uri))) {
-          throw new BadRequestError("redirect_uri is optional string parameter");
+          throw new BadRequestError(
+            "redirect_uri is optional string parameter"
+          );
         }
         const acr_values = request.query.acr_values;
         if (!(isString(acr_values) || isUndefined(acr_values))) {
@@ -112,6 +125,7 @@ export async function EndpointHandlers(configuration: Configuration) {
         }
       }
     },
+
     /**
      * provider will redirect user browser to this endpoint after user authenticate and grants access
      *
@@ -119,7 +133,10 @@ export async function EndpointHandlers(configuration: Configuration) {
      * @example "http://127.0.0.1:3000/oidc/rp/callback"
      */
     async callback(
-      request: AgnosticRequest<{ code: string; state: string } | { error: string; error_description?: string }>
+      request: AgnosticRequest<
+        | { code: string; state: string }
+        | { error: string; error_description?: string }
+      >
     ): Promise<AgnosticResponse> {
       configuration.logger("log", { request });
       try {
@@ -127,8 +144,15 @@ export async function EndpointHandlers(configuration: Configuration) {
           if (!isString(request.query.error)) {
             throw new BadRequestError("error is mandatory string parameter");
           }
-          if (!(isString(request.query.error_description) || isUndefined(request.query.error_description))) {
-            throw new BadRequestError("error_description is optional string parameter");
+          if (
+            !(
+              isString(request.query.error_description) ||
+              isUndefined(request.query.error_description)
+            )
+          ) {
+            throw new BadRequestError(
+              "error_description is optional string parameter"
+            );
           }
           const error = request.query.error;
           const error_description = request.query.error_description;
@@ -148,12 +172,26 @@ export async function EndpointHandlers(configuration: Configuration) {
           }
           const state = request.query.state;
           const code = request.query.code;
-          const authentication_request = await dataSource.manager.findOne(AuthenticationRequestEntity, {
-            where: { state },
-          });
-          if (!authentication_request) throw new Error(`authentication request not found for state ${state}`);
-          const { id_token, access_token } = await AccessTokenRequest(configuration, authentication_request, { code });
-          const user_info = await UserInfoRequest(configuration, authentication_request, access_token);
+          const authentication_request = await dataSource.manager.findOne(
+            AuthenticationRequestEntity,
+            {
+              where: { state },
+            }
+          );
+          if (!authentication_request)
+            throw new Error(
+              `authentication request not found for state ${state}`
+            );
+          const { id_token, access_token } = await AccessTokenRequest(
+            configuration,
+            authentication_request,
+            { code }
+          );
+          const user_info = await UserInfoRequest(
+            configuration,
+            authentication_request,
+            access_token
+          );
           const user_identifier = configuration.deriveUserIdentifier(user_info);
           await dataSource.manager.save(
             dataSource.getRepository(AccessTokenResponseEntity).create({
@@ -164,7 +202,11 @@ export async function EndpointHandlers(configuration: Configuration) {
               revoked: false,
             })
           );
-          return { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify(user_info) };
+          return {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(user_info),
+          };
         } else {
           throw new BadRequestError(JSON.stringify(request.query, null, 2));
         }
@@ -178,10 +220,13 @@ export async function EndpointHandlers(configuration: Configuration) {
         }
       }
     },
+
     /**
      * called from frontend to logout the user
      */
-    async revocation(request: AgnosticRequest<{ user_info: UserInfo }>): Promise<AgnosticResponse> {
+    async revocation(
+      request: AgnosticRequest<{ user_info: UserInfo }>
+    ): Promise<AgnosticResponse> {
       configuration.logger("log", { request });
       try {
         if (!request.query.user_info) {

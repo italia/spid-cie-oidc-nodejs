@@ -1,6 +1,6 @@
 # SPID/CIE OIDC Federation Relying Party, for Node.js
 
-[![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc)
+[![Relying Party Test Node.js CI](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml/badge.svg)](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml) [![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc)
 
 This package includes building blocks to implement openid federation relaying party into your application.
 
@@ -10,11 +10,13 @@ It is written in [TypeScript](https://www.typescriptlang.org/), the typings are 
 
 More detailed descriptions are provided with [JSDoc](https://jsdoc.app/about-getting-started.html), use an IDE like [vscode](https://code.visualstudio.com/docs/editor/intellisense) to see them.
 
-### Installation
+## Installation
 
 `npm install spid-cie-oidc`
 
-### Usage
+## Usage
+
+The simplest way to set the Relying Part up is by using the utilty function `ConfigurationFacade`:
 
 ```typescript
 import { ConfigurationFacade, EndpointHandlers } from 'spid-cie-oidc';
@@ -36,7 +38,9 @@ const {
 } = await EndpointHandlers(configuration);
 ```
 
-These endpoints must be exposed by your application. (see JSDoc for the purpose of each endpoint)
+These endpoints must be then exposed by your application.
+
+### Example endpoint usage
 
 Expressjs example: (see full example [here](../examples/express-react-relying-party/backend/src/index.ts))
 
@@ -49,7 +53,77 @@ app.get("/providers", async (req, res) => {
 })
 ```
 
-### Tests
+### Endpoints
+
+All endpoints have similar signature, they accept a **single `request` (`AgnosticRequest`) parameter** and return a **`response` (`AgnosticResponse`)**.
+
+`AgnosticRequest` object properties:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `url` | `string` | The complete URL of the receiving requests. |
+| `headers` | `object` | A dynamic key:value object of HTTP Headers received. |
+| `query` | generic (see below) | The query…… |
+
+`AgnosticResponse` object properties:
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `status` | `number` | The HTTP Response Status Code. |
+| `headers` | `object` (optional) | A dynamic key:value object of HTTP Headers to send. May be `undefined`. |
+| `body` | `string` (optional) | The HTTP Response body to send. May be `undefined`. |
+
+There are three different kind of endpoints:
+
+1. **System Endpoints** are expected to be forwarded as they are to the user-agent, the developer is **not** expected to customize them;
+2. **User-facing Endpoints** are expected to be customized in order to integrate your application authentication flow.
+
+#### `entityConfiguration` Endpoint
+
+This is the System Endpoint that **MUST** be used on the route configured as `.well-known/openid-federation` during the onboarding with the Federation.
+
+#### `providerList` Endpoint
+
+lists available identity providers
+
+use this list to make create links for logging in
+
+```html
+<a href="127.0.0.1:3000/oidc/rp/authorization?provider=http://127.0.0.1:8000/oidc/op/">
+  login
+</a>
+```
+
+#### `authorization` Endpoint
+
+user lands here from a link provided in login page
+
+**required** paramater is provider url
+
+```js
+const response = await authorization({
+  query: {
+    provider: "http://127.0.0.1:8000/oidc/rp"
+  }
+});
+```
+
+#### `callback` Endpoint
+
+provider will redirect user browser to this endpoint after user authenticate and grants access
+
+it **MUST** be used on the route `${configuration.redirect_uris[0]}`
+
+```url
+http://127.0.0.1:3000/oidc/rp/callback
+```
+
+#### `revocation` Endpoint
+
+called from frontend to logout the user
+
+
+## Tests
 
 Tests can be run with `yarn test`
 
