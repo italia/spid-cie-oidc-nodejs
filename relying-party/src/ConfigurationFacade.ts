@@ -15,13 +15,14 @@ export async function ConfigurationFacade({
   contacts,
   trust_anchors,
   identity_providers,
-}: {
-  client_id: string;
-  client_name: string;
-  contacts: Array<string>;
-  trust_anchors: Array<string>;
-  identity_providers: Array<string>;
-}): Promise<Configuration> {
+}: Pick<
+  Configuration,
+  | "client_id"
+  | "client_name"
+  | "contacts"
+  | "trust_anchors"
+  | "identity_providers"
+>): Promise<Configuration> {
   const { public_jwks, private_jwks } = await loadOrCreateJWKSFromFilesystem();
   const trust_marks = await loadTrustMarksFromFilesystem();
   const logger = logRotatingFilesystem;

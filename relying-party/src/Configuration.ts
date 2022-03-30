@@ -21,9 +21,14 @@ export type Configuration = {
    *
    * @example ["https://registry.spid.gov.it/"]
    */
-  /** emails */
-  contacts: Array<string>;
   trust_anchors: Array<string>;
+  /**
+   * OPTIONAL. JSON array with one or more strings representing contact persons at the entity.
+   * These MAY contain names, e-mail addresses, descriptions, phone numbers, etc.
+   * 
+   * See the [relevant specification for OpenID](https://openid.net/specs/openid-connect-federation-1_0.html#rfc.section.4.6).
+   */
+  contacts: Array<string>;
   /**
    * urls that identifies identity providers
    * @example ["https://spid.ag-pub-full.it/"]
