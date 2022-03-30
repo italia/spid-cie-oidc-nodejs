@@ -59,19 +59,19 @@ All endpoints have similar signature, they accept a **single `request` (`Agnosti
 
 `AgnosticRequest` object properties:
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `url` | `string` | The complete URL of the receiving requests. |
-| `headers` | `object` | A dynamic key:value object of HTTP Headers received. |
-| `query` | generic (see below) | The query…… |
+| Name      | Type                | Description                                                             |
+| --------- | ------------------- | ----------------------------------------------------------------------- |
+| `url`     | `string`            | The complete URL of the receiving requests.                             |
+| `headers` | `object`            | A dynamic key:value object of HTTP Headers received.                    |
+| `query`   | generic (see below) | The parsed Query String as a key:value object. Depends on the endpoint. |
 
 `AgnosticResponse` object properties:
 
-| Name | Type | Description |
-| --- | --- | --- |
-| `status` | `number` | The HTTP Response Status Code. |
+| Name      | Type                | Description                                                             |
+| --------- | ------------------- | ----------------------------------------------------------------------- |
+| `status`  | `number`            | The HTTP Response Status Code.                                          |
 | `headers` | `object` (optional) | A dynamic key:value object of HTTP Headers to send. May be `undefined`. |
-| `body` | `string` (optional) | The HTTP Response body to send. May be `undefined`. |
+| `body`    | `string` (optional) | The HTTP Response body to send. May be `undefined`.                     |
 
 There are three different kind of endpoints:
 
@@ -117,6 +117,8 @@ app.get("/oidc/rp/.well-known/openid-federation", (req, res) => {
 </details>
 
 #### `providerList` Endpoint
+
+This is a User-facing Endpoint and you are expected …
 
 lists available identity providers
 
