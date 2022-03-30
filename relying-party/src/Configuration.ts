@@ -1,7 +1,7 @@
 import * as jose from "jose";
-import { inferAlgForJWK, isValidEmail, isValidURL } from "./utils";
+import { inferAlgForJWK, isValidEmail, isValidURL, LogLevel } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
-import { UserInfo } from "./UserInfo";
+import { UserInfo } from "./UserInfoRequest";
 
 /**
  * This configuration must be done on the relaying party side
@@ -64,6 +64,16 @@ export type Configuration = {
   federation_default_exp: number;
   /** this function will be used to derive a user unique identifier from claims */
   deriveUserIdentifier(user_info: UserInfo): string;
+  /**
+   * a function that will be called to log detailed events and exceptions
+   * @see {@link logRotatingFilesystem} for an example
+   */
+  logger(level: LogLevel, message: Error | string | object | unknown): void;
+  /**
+   * a function that will be called to log mandatory details that must be stored for 24 months (such as access_token, refresh_token, id_token)
+   * @see {@link auditLogRotatingFilesystem} for an example
+   */
+  auditLogger(message: object | unknown): void;
 };
 
 export async function validateConfiguration(configuration: Configuration) {
@@ -141,5 +151,11 @@ export async function validateConfiguration(configuration: Configuration) {
         `configuration: public_jwks and private_jwks must have mtching kid ${JSON.stringify(public_jwk)}`
       );
     }
+  }
+  if (typeof configuration.logger !== "function") {
+    throw new Error(`configuration: logger must be a function`);
+  }
+  if (typeof configuration.auditLogger !== "function") {
+    throw new Error(`configuration: auditLogger must be a function`);
   }
 }

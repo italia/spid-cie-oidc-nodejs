@@ -6,7 +6,7 @@ import {
   AgnosticRequest,
   AgnosticResponse,
   EndpointHandlers,
-} from "@spid-cie-oidc-nodejs/relying-party";
+} from "spid-cie-oidc";
 
 main();
 async function main() {
@@ -29,13 +29,19 @@ async function main() {
   } = await EndpointHandlers(configuration);
 
   function adaptRequest(req: Request): AgnosticRequest<any> {
-    return { query: req.query };
+    return {
+      url: `${req.protocol}://${req.get("host")}${req.originalUrl}`,
+      headers: req.headers as Record<string, string>,
+      query: req.query,
+    };
   }
 
   function adaptReponse(response: AgnosticResponse, res: Response) {
     res.status(response.status);
     if (response.headers) {
-      for (const [headerName, headerValue] of Object.entries(response.headers)) {
+      for (const [headerName, headerValue] of Object.entries(
+        response.headers
+      )) {
         res.set(headerName, headerValue);
       }
     }
@@ -48,7 +54,8 @@ async function main() {
   app.use(session({ secret: "spid-cie-oidc-nodejs" }));
 
   app.get("/oidc/rp/providers", async (req, res) => {
-    const response = await providerList();
+    const request = adaptRequest(req);
+    const response = await providerList(request);
     adaptReponse(response, res);
   });
 
@@ -76,7 +83,9 @@ async function main() {
 
   app.get("/oidc/rp/revocation", async (req, res) => {
     if (!req.session.user_info) throw new Error(); // TODO externalize session retreival
-    const response = await revocation(req.session.user_info as any);
+    const request = adaptRequest(req);
+    request.query.user_info = req.session.user_info;
+    const response = await revocation(request);
     req.session.destroy((error) => {
       if (error) throw new Error(); // TODO decide what to do with the error
     });
@@ -84,7 +93,8 @@ async function main() {
   });
 
   app.get("/oidc/rp/.well-known/openid-federation", async (req, res) => {
-    const response = await entityConfiguration();
+    const request = adaptRequest(req);
+    const response = await entityConfiguration(request);
     adaptReponse(response, res);
   });
 
@@ -116,6 +126,5 @@ declare module "express-session" {
   }
 }
 
-// TODO logger as function default implementation write filesystem rotating log
 // TODO session (create, destroy, update) default implementation ecrypted cookie
 // TODO authorizationRequest access token storage default implementation in memory?

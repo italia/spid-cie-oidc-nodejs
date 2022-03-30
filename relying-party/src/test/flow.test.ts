@@ -18,7 +18,7 @@ describe("test whole flow happy path", () => {
   test("entity configuration endpoint happy path", async () => {
     const { configuration, handlers } = await machinery;
     const { entityConfiguration } = handlers;
-    const response = await entityConfiguration();
+    const response = await entityConfiguration({ url: "", query: {}, headers: {} });
     expect(response.status).toBe(200);
     const entity_configuration = await verifyEntityConfiguration(response.body as string);
     expect(withoutFields(entity_configuration, ["iat", "exp"])).toEqual({
@@ -46,7 +46,7 @@ describe("test whole flow happy path", () => {
   test("provider list endpoint happy path", async () => {
     const { handlers } = await machinery;
     const { providerList } = handlers;
-    const response = await providerList();
+    const response = await providerList({ url: "", headers: {}, query: {} });
     expect(response).toEqual({
       status: 200,
       headers: {

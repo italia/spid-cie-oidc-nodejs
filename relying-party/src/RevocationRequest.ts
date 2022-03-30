@@ -2,7 +2,7 @@ import { request } from "undici";
 import { Configuration } from "./Configuration";
 import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
-import { UserInfo } from "./UserInfo";
+import { UserInfo } from "./UserInfoRequest";
 import { createJWS, getPrivateJWKforProvider, makeExp, makeIat, makeJti } from "./utils";
 
 export async function RevocationRequest(configuration: Configuration, user_info: UserInfo) {
@@ -42,11 +42,15 @@ export async function RevocationRequest(configuration: Configuration, user_info:
     };
     accessTokenRequestEntity.revoked = true;
     await dataSource.manager.save(accessTokenRequestEntity); // TODO refactor to a better places
-
-    // fetch part
-    // -------------------
-
-    // TODO when doing post request ensure timeout and ssl is respected
+    configuration.logger("log", {
+      url,
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(params).toString(),
+    });
+    // SHOULDDO when doing post request ensure timeout and ssl is respected
     const response = await request(url, {
       method: "POST",
       headers: {
@@ -54,12 +58,20 @@ export async function RevocationRequest(configuration: Configuration, user_info:
       },
       body: new URLSearchParams(params).toString(),
     });
+    const bodyText = await response.body.text();
     if (response.statusCode !== 200) {
-      // console.log(response.statusCode, await response.body.json());
-      // throw new Error(); // TODO
+      configuration.logger("warn", {
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: bodyText,
+      });
+    } else {
+      configuration.logger("log", {
+        statusCode: response.statusCode,
+        headers: response.headers,
+        body: bodyText,
+      });
     }
-
     // TODO validate reponse
   }
-  // TODO audit log revocation request
 }

@@ -6,9 +6,8 @@ import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { RevocationRequest } from "./RevocationRequest";
-import { UserInfo } from "./UserInfo";
-import { UserInfoRequest } from "./UserInfoRequest";
-import { isString, isUndefined, REPLACEME_logError } from "./utils";
+import { UserInfo, UserInfoRequest } from "./UserInfoRequest";
+import { BadRequestError, isString, isUndefined } from "./utils";
 
 export async function EndpointHandlers(configuration: Configuration) {
   await validateConfiguration(configuration);
@@ -18,16 +17,15 @@ export async function EndpointHandlers(configuration: Configuration) {
      *
      * used during onboarding with federation
      */
-    async entityConfiguration(): Promise<AgnosticResponse> {
+    async entityConfiguration(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
+      configuration.logger("info", { request });
       try {
         const jws = await EntityConfiguration(configuration);
-        return {
-          status: 200,
-          headers: { "Content-Type": "application/entity-statement+jwt" },
-          body: jws,
-        };
+        const response = { status: 200, headers: { "Content-Type": "application/entity-statement+jwt" }, body: jws };
+        configuration.logger("info", { response });
+        return response;
       } catch (error) {
-        REPLACEME_logError(error);
+        configuration.logger("error", error);
         return { status: 500 };
       }
     },
@@ -38,16 +36,24 @@ export async function EndpointHandlers(configuration: Configuration) {
      *
      * @example <a href="127.0.0.1:3000/oidc/rp/authorization?provider=http://127.0.0.1:8000/oidc/op/">login</a>
      */
-    async providerList(): Promise<AgnosticResponse> {
-      return {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          configuration.identity_providers.map((id) => {
-            return { id, name: "", img: "" };
-          })
-        ),
-      };
+    async providerList(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
+      configuration.logger("debug", { request });
+      try {
+        const response = {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            configuration.identity_providers.map((id) => {
+              return { id, name: "", img: "" };
+            })
+          ),
+        };
+        configuration.logger("debug", { request });
+        return response;
+      } catch (error) {
+        configuration.logger("error", error);
+        return { status: 500 };
+      }
     },
     /**
      * user lands here from a link provided in login page
@@ -64,6 +70,7 @@ export async function EndpointHandlers(configuration: Configuration) {
         prompt?: string;
       }>
     ): Promise<AgnosticResponse> {
+      configuration.logger("info", { request });
       try {
         const provider = request.query.provider as string;
         if (!isString(provider)) {
@@ -92,18 +99,15 @@ export async function EndpointHandlers(configuration: Configuration) {
           acr_values,
           prompt,
         });
-        return {
-          status: 302,
-          headers: { Location: redirectUrl },
-        };
+        const response = { status: 302, headers: { Location: redirectUrl } };
+        configuration.logger("info", { response });
+        return response;
       } catch (error) {
         if (error instanceof BadRequestError) {
-          return {
-            status: 400,
-            body: error.message,
-          };
+          configuration.logger("info", { error });
+          return { status: 400, body: error.message };
         } else {
-          REPLACEME_logError(error);
+          configuration.logger("error", error);
           return { status: 500 };
         }
       }
@@ -117,6 +121,7 @@ export async function EndpointHandlers(configuration: Configuration) {
     async callback(
       request: AgnosticRequest<{ code: string; state: string } | { error: string; error_description?: string }>
     ): Promise<AgnosticResponse> {
+      configuration.logger("log", { request });
       try {
         if ("error" in request.query) {
           if (!isString(request.query.error)) {
@@ -127,11 +132,13 @@ export async function EndpointHandlers(configuration: Configuration) {
           }
           const error = request.query.error;
           const error_description = request.query.error_description;
-          return {
+          const response = {
             status: 400,
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ error, error_description }),
           };
+          configuration.logger("info", { response });
+          return response;
         } else if ("code" in request.query) {
           if (!isString(request.query.code)) {
             throw new BadRequestError("code is mandatory string parameter");
@@ -157,22 +164,16 @@ export async function EndpointHandlers(configuration: Configuration) {
               revoked: false,
             })
           );
-          return {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(user_info),
-          };
+          return { status: 200, headers: { "Content-Type": "application/json" }, body: JSON.stringify(user_info) };
         } else {
           throw new BadRequestError(JSON.stringify(request.query, null, 2));
         }
       } catch (error) {
         if (error instanceof BadRequestError) {
-          return {
-            status: 400,
-            body: error.message,
-          };
+          configuration.logger("warn", { error });
+          return { status: 400, body: error.message };
         } else {
-          REPLACEME_logError(error);
+          configuration.logger("error", error);
           return { status: 500 };
         }
       }
@@ -180,19 +181,32 @@ export async function EndpointHandlers(configuration: Configuration) {
     /**
      * called from frontend to logout the user
      */
-    async revocation(user_info: UserInfo): Promise<AgnosticResponse> {
+    async revocation(request: AgnosticRequest<{ user_info: UserInfo }>): Promise<AgnosticResponse> {
+      configuration.logger("log", { request });
       try {
-        await RevocationRequest(configuration, user_info);
-        return { status: 200 };
+        if (!request.query.user_info) {
+          throw new BadRequestError("user_info is mandatory parameter");
+        }
+        await RevocationRequest(configuration, request.query.user_info);
+        const response = { status: 200 };
+        configuration.logger("log", { response });
+        return response;
       } catch (error) {
-        REPLACEME_logError(error);
-        return { status: 500 };
+        if (error instanceof BadRequestError) {
+          configuration.logger("warn", { error });
+          return { status: 400, body: error.message };
+        } else {
+          configuration.logger("error", error);
+          return { status: 500 };
+        }
       }
     },
   };
 }
 
 export type AgnosticRequest<Query> = {
+  url: string;
+  headers: Record<string, string>;
   query: Query;
 };
 
@@ -201,5 +215,3 @@ export type AgnosticResponse = {
   headers?: Record<string, string>;
   body?: string;
 };
-
-class BadRequestError extends Error {}

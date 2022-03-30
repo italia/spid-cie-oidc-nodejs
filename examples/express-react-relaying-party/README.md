@@ -18,7 +18,7 @@ This project showcases the relaying party.
   - run this command `yarn build && yarn link`
 
 - cd into this directory, your local directory that corresponds to [this](https://github.com/italia/spid-cie-oidc-nodejs/tree/main/examples/express-react-relaying-party)
-  - run this command `yarn link @spid-cie-oidc-nodejs/relying-party && yarn build && yarn start`
+  - run this command `yarn link spid-cie-oidc && yarn build && yarn start`
   - this will start the relying party server on [http://127.0.0.1:3000](http://127.0.0.1:3000), keep it running
 
 - do the onboarding process

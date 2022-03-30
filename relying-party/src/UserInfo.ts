@@ -1,1 +1,0 @@
-export type UserInfo = Record<string, unknown>;

@@ -1,6 +1,9 @@
-import * as fs from "fs";
-import { generateJWKS } from "./utils";
 import { Configuration } from "./Configuration";
+import { auditLogRotatingFilesystem } from "./default-implementations/auditLogRotatingFilesystem";
+import { deriveFiscalNumberUserIdentifier } from "./default-implementations/deriveFiscalNumberUserIdentifier";
+import { loadOrCreateJWKSFromFilesystem } from "./default-implementations/loadOrCreateJWKSFromFilesystem";
+import { loadTrustMarksFromFilesystem } from "./default-implementations/loadTrustMarksFromFilesystem";
+import { logRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";
 
 /**
  * This is a configuration facade to minimize setup effort.
@@ -19,8 +22,11 @@ export async function ConfigurationFacade({
   trust_anchors: Array<string>;
   identity_providers: Array<string>;
 }): Promise<Configuration> {
-  const { public_jwks, private_jwks } = await loadOrCreateJWKS();
-  const trust_marks = await loadTrustMarks();
+  const { public_jwks, private_jwks } = await loadOrCreateJWKSFromFilesystem();
+  const trust_marks = await loadTrustMarksFromFilesystem();
+  const logger = logRotatingFilesystem;
+  const auditLogger = auditLogRotatingFilesystem;
+  const deriveUserIdentifier = deriveFiscalNumberUserIdentifier;
   return {
     client_id,
     client_name,
@@ -77,45 +83,8 @@ export async function ConfigurationFacade({
     private_jwks,
     trust_marks,
     redirect_uris: [client_id + "callback"],
-    deriveUserIdentifier(claims) {
-      const userIdentifierFields = ["https://attributes.spid.gov.it/fiscalNumber", "fiscalNumber"];
-      if (!(typeof claims === "object" && claims !== null)) throw new Error();
-      const claimsAsRecord = claims as Record<string, unknown>;
-      for (const userIdentifierField of userIdentifierFields) {
-        const value = claimsAsRecord[userIdentifierField];
-        if (typeof value === "string") return value;
-      }
-      throw new Error();
-    },
+    deriveUserIdentifier,
+    logger,
+    auditLogger,
   };
-}
-
-async function loadOrCreateJWKS() {
-  const public_jwks_path = "./public.jwks.json";
-  const private_jwks_path = "./private.jwks.json";
-  if ((await fileExists(public_jwks_path)) && (await fileExists(private_jwks_path))) {
-    const public_jwks = JSON.parse(await fs.promises.readFile(public_jwks_path, "utf8"));
-    const private_jwks = JSON.parse(await fs.promises.readFile(private_jwks_path, "utf8"));
-    return { public_jwks, private_jwks };
-  } else {
-    const { public_jwks, private_jwks } = await generateJWKS();
-    await fs.promises.writeFile(public_jwks_path, JSON.stringify(public_jwks));
-    await fs.promises.writeFile(private_jwks_path, JSON.stringify(private_jwks));
-    return { public_jwks, private_jwks };
-  }
-}
-
-async function loadTrustMarks() {
-  const trust_marks_path = "./trust_marks.json";
-  if (await fileExists(trust_marks_path)) return JSON.parse(await fs.promises.readFile(trust_marks_path, "utf8"));
-  else return [];
-}
-
-async function fileExists(path: string) {
-  try {
-    await fs.promises.stat(path);
-    return true;
-  } catch (error) {
-    return false;
-  }
 }

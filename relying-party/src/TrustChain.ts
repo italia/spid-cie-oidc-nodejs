@@ -1,16 +1,22 @@
 import { request } from "undici";
 import * as jose from "jose";
-import { inferAlgForJWK } from "./utils";
+import { inferAlgForJWK, makeIat } from "./utils";
 import {
   TrustAnchorEntityConfiguration,
   IdentityProviderEntityConfiguration,
   RelyingPartyEntityConfiguration,
 } from "./EntityConfiguration";
 import { cloneDeep, difference, intersection } from "lodash";
+import { Configuration } from "./Configuration";
 
 // SHOULDDO implement arbitray length tst chain validation
-// TODO check authority hints
-export async function TrustChain(relying_party: string, identity_provider: string, trust_anchor: string) {
+// SHOULDDO check authority hints
+async function TrustChain(
+  configuration: Configuration,
+  relying_party: string,
+  identity_provider: string,
+  trust_anchor: string
+) {
   const relying_party_entity_configuration = await getEntityConfiguration<RelyingPartyEntityConfiguration>(
     relying_party
   );
@@ -35,10 +41,18 @@ export async function TrustChain(relying_party: string, identity_provider: strin
     ...identity_provider_entity_configuration,
     metadata,
   };
-  return {
+  configuration.logger("log", {
+    relying_party,
+    identity_provider,
+    trust_anchor,
+    relying_party_entity_configuration,
+    identity_provider_entity_configuration,
+    relying_party_entity_statement,
+    identity_provider_entity_statement,
     exp,
-    entity_configuration,
-  };
+    metadata,
+  });
+  return { exp, entity_configuration };
 }
 
 async function getEntityStatement(
@@ -68,7 +82,7 @@ async function getEntityStatement(
   return JSON.parse(new TextDecoder().decode(payload));
 }
 
-// TODO memoize by expiration
+// SHOULDDO memoize by expiration
 async function getEntityConfiguration<T>(url: string): Promise<T> {
   // TODO when doing post request ensure timeout and ssl is respected
   const response = await request(url + ".well-known/openid-federation", {
@@ -158,4 +172,23 @@ export async function verifyEntityConfiguration(jws: string) {
   const entity_configuration = JSON.parse(new TextDecoder().decode(payload));
   // TODO verify schema (verify that has trust_marks)
   return entity_configuration;
+}
+
+const trustChainCache = new Map<string, Awaited<ReturnType<typeof TrustChain>>>();
+export async function CachedTrustChain(
+  configuration: Configuration,
+  relying_party: string,
+  identity_provider: string,
+  trust_anchor: string
+) {
+  const cacheKey = `${relying_party}-${identity_provider}-${trust_anchor}`;
+  const cached = trustChainCache.get(cacheKey);
+  const now = makeIat();
+  if (cached && cached.exp > now) {
+    return cached;
+  } else {
+    const trust_chain = await TrustChain(configuration, relying_party, identity_provider, trust_anchor);
+    trustChainCache.set(cacheKey, trust_chain);
+    return trust_chain;
+  }
 }

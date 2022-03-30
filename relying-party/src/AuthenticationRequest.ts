@@ -1,9 +1,16 @@
 import crypto from "crypto";
-import { createJWS, generateRandomString, getPrivateJWKforProvider, makeIat } from "./utils";
+import {
+  BadRequestError,
+  createJWS,
+  generateRandomString,
+  getPrivateJWKforProvider,
+  isValidURL,
+  makeIat,
+} from "./utils";
 import { Configuration } from "./Configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { dataSource } from "./persistance/data-source";
-import { TrustChain } from "./TrustChain";
+import { CachedTrustChain } from "./TrustChain";
 
 export async function AuthenticationRequest(
   configuration: Configuration,
@@ -23,16 +30,37 @@ export async function AuthenticationRequest(
     profile?: string;
   }
 ) {
-  // TODO validate provider is a known provider
-  // TODO validate scope parameter (should be space sperated list of supported scopes, must include openid)
-  // TODO validate prompt inculdes supported values (space separated)
-  // TODO validate redirect_uri is well formed
-
-  const identityProviderTrustChain = await TrustChain(
-    configuration.client_id,
-    provider,
-    configuration.trust_anchors[0]
-  ); // TODO try with all anchors
+  if (!isValidURL(provider)) {
+    throw new BadRequestError(`provider is not a valid url ${provider}`);
+  }
+  if (!configuration.identity_providers.includes(provider)) {
+    throw new BadRequestError(`provider is not supported ${provider}`);
+  }
+  if (!isValidURL(redirect_uri)) {
+    throw new BadRequestError(`redirect_uri must be a valid url ${redirect_uri}`);
+  }
+  if (prompt !== "consent login") {
+    // SHOULDDO validate prompt inculdes supported values (space separated) and no duplicates
+    throw new BadRequestError(`prompt is not supported ${prompt}`);
+  }
+  if (scope !== "openid") {
+    // SHOULDDO validate scope parameter (should be space sperated list of supported scopes, must include openid, no duplicates)
+    throw new BadRequestError(`scope is not suppported ${scope}`);
+  }
+  const identityProviderTrustChain = (
+    await Promise.all(
+      configuration.trust_anchors.map(async (trust_anchor) => {
+        try {
+          return CachedTrustChain(configuration, configuration.client_id, provider, trust_anchor);
+        } catch (error) {
+          return null;
+        }
+      })
+    )
+  ).find((trust_chain) => trust_chain !== null);
+  if (!identityProviderTrustChain) {
+    throw new Error(`Unable to find trust chain for identity provider ${provider}`);
+  }
   const {
     authorization_endpoint,
     token_endpoint,

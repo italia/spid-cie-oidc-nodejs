@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import * as fs from "fs";
 import * as jose from "jose";
 import * as uuid from "uuid";
 import { Configuration } from "./Configuration";
@@ -37,7 +38,7 @@ export function getPrivateJWKforProvider(configuration: Configuration) {
 export function inferAlgForJWK(jwk: jose.JWK) {
   if (jwk.kty === "RSA") return "RS256";
   if (jwk.kty === "EC") return "ES256";
-  // TODO support more types
+  // SHOULDDO support more types
   throw new Error("unsupported key type");
 }
 
@@ -77,8 +78,15 @@ export function isUndefined(value: unknown): value is undefined {
   return value === undefined;
 }
 
-// TODO do something with them
-export function REPLACEME_logError(error: unknown) {}
+export async function fileExists(path: string) {
+  try {
+    await fs.promises.stat(path);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
 
-// TODO do something with them
-export function REPLACEME_logAudit(rquestOrResponse: unknown) {}
+export type LogLevel = "error" | "warn" | "log" | "info" | "debug";
+
+export class BadRequestError extends Error {}

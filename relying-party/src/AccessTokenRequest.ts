@@ -32,7 +32,15 @@ export async function AccessTokenRequest(
     client_assertion_type,
     client_assertion: await createJWS({ iss, sub, aud: [token_endpoint], iat, exp, jti }, jwk),
   };
-  // TODO when doing post request ensure timeout and ssl is respected
+  configuration.logger("log", {
+    url,
+    method: "POST",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(params).toString(),
+  });
+  // SHOULDDO when doing post request ensure timeout and ssl is respected
   const response = await request(url, {
     method: "POST",
     headers: {
@@ -40,13 +48,29 @@ export async function AccessTokenRequest(
     },
     body: new URLSearchParams(params).toString(),
   });
+  const bodyText = await response.body.text();
+  const bodyJSON = JSON.parse(bodyText);
   if (response.statusCode !== 200) {
-    throw new Error(); // TODO better error reporting
+    configuration.logger("error", {
+      statusCode: response.statusCode,
+      headers: response.headers,
+      body: bodyText,
+    });
+    throw new Error(`access token request failed ${await response.body.text()}`);
+  } else {
+    configuration.logger("log", {
+      statusCode: response.statusCode,
+      headers: response.headers,
+      body: bodyText,
+    });
   }
   // TODO validate reponse
-  return (await response.body.json()) as {
+  const data: {
     id_token: string;
     access_token: string;
     refresh_token?: string; // if offline_access scope is requested
-  };
+  } = bodyJSON;
+  const { id_token, access_token, refresh_token } = data;
+  configuration.auditLogger({ id_token, access_token, refresh_token });
+  return data;
 }

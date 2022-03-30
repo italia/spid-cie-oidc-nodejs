@@ -10,12 +10,12 @@ More detailed descriptions are provided with [JSDoc](https://jsdoc.app/about-get
 
 ### Installation
 
-`npm install @spid-cie-oidc-nodejs/relying-party`
+`npm install spid-cie-oidc`
 
 ### Usage
 
 ```typescript
-import { ConfigurationFacade, EndpointHandlers } from '@spid-cie-oidc-nodejs/relying-party';
+import { ConfigurationFacade, EndpointHandlers } from 'spid-cie-oidc';
 
 const configuration = ConfigurationFacade({
   client_id: "http://127.0.0.1:3000",
