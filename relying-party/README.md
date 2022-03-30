@@ -1,5 +1,7 @@
 # SPID/CIE OIDC Federation Relying Party, for Node.js
 
+[![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc)
+
 This package includes building blocks to implement openid federation relaying party into your application.
 
 It is framework agnostic so you will need to write some adapter code.
