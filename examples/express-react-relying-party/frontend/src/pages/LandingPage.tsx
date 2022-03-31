@@ -6,14 +6,18 @@ import itProviderIcon from "../components/spid-logo.svg";
 import { useQuery } from "react-query";
 import { FormattedMessage } from "react-intl";
 
+type Provider = { sub: string; organization_name: string; logo_uri?: string };
+
 export function LandingPage() {
   const providers = useQuery("providers", async () => {
     const response = await fetch("/oidc/rp/providers");
     if (response.status !== 200) throw new Error();
     const data = await response.json();
-    return data as Array<{ id: string; name: string; img: string }>;
+    return data as Array<Provider>;
   });
+
   const [isSpidButtonOpen, setIsSpidButtonOpen] = React.useState(false);
+
   return (
     <div className="container pt-2 p-3">
       <div className="row d-lg-flex">
@@ -28,10 +32,10 @@ export function LandingPage() {
                         <FormattedMessage id="welcome" />
                       </h3>
                       <p className="card-title">
-                        <FormattedMessage id="spid-explanation"/>
+                        <FormattedMessage id="spid-explanation" />
                       </p>
                       <p className="card-title">
-                      <FormattedMessage id="cie-explanation"/>
+                        <FormattedMessage id="cie-explanation" />
                       </p>
                     </div>
                     <div className="row mt-3">
@@ -67,18 +71,22 @@ export function LandingPage() {
                                 {providers.data?.map((provider) => {
                                   return (
                                     <li
-                                      key={provider.id}
+                                      key={provider.sub}
                                       className="spid-idp-button-link"
                                     >
                                       <a
-                                        href={`/oidc/rp/authorization?provider=${provider.id}`}
+                                        href={`/oidc/rp/authorization?provider=${encodeURIComponent(
+                                          provider.sub
+                                        )}`}
                                       >
                                         <span className="spid-sr-only">
-                                          {provider.name}
+                                          {provider.organization_name}
                                         </span>
                                         <img
-                                          src={itProviderIcon}
-                                          alt={provider.name}
+                                          src={
+                                            provider.logo_uri ?? itProviderIcon
+                                          }
+                                          alt=""
                                         />
                                       </a>
                                     </li>

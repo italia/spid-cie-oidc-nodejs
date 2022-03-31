@@ -7,6 +7,7 @@ import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { RevocationRequest } from "./RevocationRequest";
+import { CachedTrustChain } from "./TrustChain";
 import { UserInfo, UserInfoRequest } from "./UserInfoRequest";
 import { BadRequestError, isString, isUndefined } from "./utils";
 
@@ -51,14 +52,28 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
       const configuration = await setupConfiguration();
 
       configuration.logger.debug({ request });
+
+      const trust_chains = await Promise.all(
+        configuration.identity_providers.map((identity_providers_id) =>
+          CachedTrustChain(
+            configuration,
+            configuration.client_id,
+            identity_providers_id,
+            configuration.trust_anchors[0] // TODO
+          )
+        )
+      );
+
       try {
         const response = {
           status: 200,
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(
-            configuration.identity_providers.map((id) => {
-              return { id, name: "", img: "" };
-            })
+            trust_chains.filter(Boolean).map((tc) => ({
+              sub: tc.entity_configuration.sub,
+              organization_name: tc.entity_configuration.metadata?.openid_provider?.organization_name,
+              logo_uri: tc.entity_configuration.metadata?.openid_provider?.logo_uri,
+            }))
           ),
         };
         configuration.logger.debug({ request });
