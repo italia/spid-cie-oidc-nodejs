@@ -15,4 +15,9 @@ COPY docker/private.jwks.example.json private.jwks.json
 COPY docker/public.jwks.example.json public.jwks.json
 COPY docker/trust_marks.example.json trust_marks.json
 
+ENV PORT=3000
+ENV CLIENT_ID=http://relying-party.org:3000/oidc/rp/
+ENV TRUST_ANCHOR=http://trust-anchor.org:8000/
+ENV IDENTITY_PROVIDER=http://trust-anchor.org:8000/oidc/op/
+
 ENTRYPOINT ["yarn", "start"]

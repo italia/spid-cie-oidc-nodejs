@@ -43,7 +43,8 @@ This project showcases the relying party.
 ### Docker
 
 A docker image containing this example can be built a run:
-  - `docker-compose up`
+  - `docker-compose up` (this builds the images locally)
+    - or alternatively `cd docker && docker-compose up` (this download images from repository)
   - add these entries to your hosts file
 ```
 127.0.0.1 trust-anchor.org
