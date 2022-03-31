@@ -8,12 +8,26 @@ import { readJSON } from "./utils";
 
 type MandatoryConfiguration = Pick<
   Configuration,
-  "client_id" | "client_name" | "contacts" | "trust_anchors" | "identity_providers"
+  "client_id" | "client_name" | "trust_anchors" | "identity_providers"
 >;
 
 type AdditionalConfiguration = {
+  /**
+   * The path (relative to the CWD) where to find the Public JWKs, if not passed
+   * directly as `public_jwks`.
+   */
   public_jwks_path?: string;
+
+  /**
+   * The path (relative to the CWD) where to find the Private JWKs, if not passed
+   * directly as `private_jwks`.
+   */
   private_jwks_path?: string;
+
+  /**
+   * The path (relative to the CWD) where to find the Trust Marks, if not passed
+   * directly as `trust_marks`.
+   */
   trust_marks_path?: string;
 };
 
@@ -26,7 +40,6 @@ export type ConfigurationFacadeOptions = MandatoryConfiguration & Partial<Config
 export async function ConfigurationFacade({
   client_id,
   client_name,
-  contacts,
   trust_anchors,
   identity_providers,
   public_jwks,
@@ -76,7 +89,6 @@ export async function ConfigurationFacade({
   return {
     client_id,
     client_name,
-    contacts,
     trust_anchors,
     identity_providers,
 
