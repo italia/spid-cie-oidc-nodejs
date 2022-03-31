@@ -17,11 +17,7 @@ export async function ConfigurationFacade({
   identity_providers,
 }: Pick<
   Configuration,
-  | "client_id"
-  | "client_name"
-  | "contacts"
-  | "trust_anchors"
-  | "identity_providers"
+  "client_id" | "client_name" | "contacts" | "trust_anchors" | "identity_providers"
 >): Promise<Configuration> {
   const { public_jwks, private_jwks } = await loadOrCreateJWKSFromFilesystem();
   const trust_marks = await loadTrustMarksFromFilesystem();

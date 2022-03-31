@@ -70,6 +70,65 @@ export type RelyingPartyEntityConfiguration = {
   };
 };
 
+type Translatable<Key extends string, Type = string> = {
+  [K in Key]: Type;
+} & {
+  [L in string as `${Key}#${L}`]: Type;
+};
+
+/**
+ * Il formato del metadata deriva da quanto specificato nel documento «OpenID
+ * Connect Discovery 1.0», del quale costituisce un sottoinsieme con alcuni
+ * campi in aggiunta.
+ *
+ * https://docs.italia.it/AgID/documenti-in-consultazione/lg-openidconnect-spid-docs/it/bozza/metadata/openid-provider-op-metadata.html
+ * 
+ * https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
+ */
+export type OpenIDProviderMetadata = Translatable<"op_name" | "op_uri" | "op_url"> & {
+  acr_values_supported: Array<string>;
+  authorization_endpoint: string;
+  claims_parameter_supported: boolean;
+  claims_supported: Array<string>;
+  client_registration_types_supported: Array<string>;
+  code_challenge_methods_supported: Array<string>;
+  contacts: Array<string>;
+  grant_types_supported: Array<string>;
+
+  /** OPTIONAL. JSON array containing a list of the JWE encryption algorithms (alg values) supported by the OP for the ID Token to encode the Claims in a JWT. */
+  id_token_encryption_alg_values_supported?: Array<string>;
+
+  /** OPTIONAL. JSON array containing a list of the JWE encryption algorithms (enc values) supported by the OP for the ID Token to encode the Claims in a JWT. */
+  id_token_encryption_enc_values_supported?: Array<string>;
+  id_token_signing_alg_values_supported: Array<string>;
+  introspection_endpoint: string;
+  issuer: string;
+  jwks: { keys: Array<jose.JWK> };
+  logo_uri: string;
+  op_name: string;
+  op_policy_uri: string;
+  op_uri: string;
+  organization_name: string;
+  request_authentication_methods_supported: unknown; // SHOULDDO
+  request_object_encryption_alg_values_supported: Array<string>;
+  request_object_encryption_enc_values_supported: Array<string>;
+  request_object_signing_alg_values_supported: Array<string>;
+  request_parameter_supported: boolean;
+  request_uri_parameter_supported: boolean;
+  require_request_uri_registration: boolean;
+  response_types_supported: Array<string>;
+  revocation_endpoint: string;
+  scopes_supported: Array<string>;
+  subject_types_supported: Array<string>;
+  token_endpoint_auth_methods_supported: Array<string>;
+  token_endpoint_auth_signing_alg_values_supported: Array<string>;
+  token_endpoint: string;
+  userinfo_encryption_alg_values_supported: Array<string>;
+  userinfo_encryption_enc_values_supported: Array<string>;
+  userinfo_endpoint: string;
+  userinfo_signing_alg_values_supported: Array<string>;
+};
+
 export type IdentityProviderEntityConfiguration = {
   exp: number;
   iat: number;
@@ -79,45 +138,7 @@ export type IdentityProviderEntityConfiguration = {
   trust_marks: Array<{ id: string; trust_mark: string }>;
   authority_hints: Array<string>;
   metadata: {
-    openid_provider: {
-      authorization_endpoint: string;
-      revocation_endpoint: string;
-      id_token_encryption_alg_values_supported: Array<string>;
-      id_token_encryption_enc_values_supported: Array<string>;
-      op_name: string;
-      op_uri: string;
-      token_endpoint: string;
-      userinfo_endpoint: string;
-      introspection_endpoint: string;
-      claims_parameter_supported: boolean;
-      contacts: Array<string>;
-      client_registration_types_supported: Array<string>;
-      code_challenge_methods_supported: Array<string>;
-      request_authentication_methods_supported: unknown; // SHOULDDO
-      acr_values_supported: Array<string>;
-      claims_supported: Array<string>;
-      grant_types_supported: Array<string>;
-      id_token_signing_alg_values_supported: Array<string>;
-      issuer: string;
-      jwks: { keys: Array<jose.JWK> };
-      scopes_supported: Array<string>;
-      logo_uri: string;
-      organization_name: string;
-      op_policy_uri: string;
-      request_parameter_supported: boolean;
-      request_uri_parameter_supported: boolean;
-      require_request_uri_registration: boolean;
-      response_types_supported: Array<string>;
-      subject_types_supported: Array<string>;
-      token_endpoint_auth_methods_supported: Array<string>;
-      token_endpoint_auth_signing_alg_values_supported: Array<string>;
-      userinfo_encryption_alg_values_supported: Array<string>;
-      userinfo_encryption_enc_values_supported: Array<string>;
-      userinfo_signing_alg_values_supported: Array<string>;
-      request_object_encryption_alg_values_supported: Array<string>;
-      request_object_encryption_enc_values_supported: Array<string>;
-      request_object_signing_alg_values_supported: Array<string>;
-    };
+    openid_provider: OpenIDProviderMetadata;
   };
 };
 
