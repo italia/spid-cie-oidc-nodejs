@@ -61,7 +61,7 @@ export type RelyingPartyEntityConfiguration = {
       client_registration_types: Array<string>;
       jwks: { keys: Array<jose.JWK> };
       client_name: string;
-      contacts: Array<string>;
+      contacts?: Array<string>;
       grant_types: Array<string>;
       redirect_uris: Array<string>;
       response_types: Array<string>;

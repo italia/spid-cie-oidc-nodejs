@@ -5,6 +5,6 @@ export { AgnosticRequest, AgnosticResponse, EndpointHandlers } from "./EndpointH
 export { UserInfo } from "./UserInfoRequest";
 export { loadOrCreateJWKSFromFilesystem } from "./default-implementations/loadOrCreateJWKSFromFilesystem";
 export { loadTrustMarksFromFilesystem } from "./default-implementations/loadTrustMarksFromFilesystem";
-export { logRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";
-export { auditLogRotatingFilesystem } from "./default-implementations/auditLogRotatingFilesystem";
+export { createLogRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";
+export { createAuditLogRotatingFilesystem } from "./default-implementations/auditLogRotatingFilesystem";
 export { deriveFiscalNumberUserIdentifier } from "./default-implementations/deriveFiscalNumberUserIdentifier";

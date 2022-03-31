@@ -11,7 +11,7 @@ export async function UserInfoRequest(
 ) {
   // SHOULDDO ensure timeout and ssl is used when doing get request
   const url = authenticationRequestEntity.userinfo_endpoint;
-  configuration.logger("log", {
+  configuration.logger.info({
     url,
     method: "GET",
     headers: { Authorization: `Bearer ${access_token}` },
@@ -21,14 +21,14 @@ export async function UserInfoRequest(
   });
   const bodyText = await response.body.text();
   if (response.statusCode !== 200) {
-    configuration.logger("error", {
+    configuration.logger.error({
       statusCode: response.statusCode,
       headers: response.headers,
       body: bodyText,
     });
     throw new Error(`user info request failed`);
   } else {
-    configuration.logger("log", {
+    configuration.logger.info({
       statusCode: response.statusCode,
       headers: response.headers,
       body: bodyText,

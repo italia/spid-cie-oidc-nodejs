@@ -32,7 +32,7 @@ export async function AccessTokenRequest(
     client_assertion_type,
     client_assertion: await createJWS({ iss, sub, aud: [token_endpoint], iat, exp, jti }, jwk),
   };
-  configuration.logger("log", {
+  configuration.logger.info({
     url,
     method: "POST",
     headers: {
@@ -51,14 +51,14 @@ export async function AccessTokenRequest(
   const bodyText = await response.body.text();
   const bodyJSON = JSON.parse(bodyText);
   if (response.statusCode !== 200) {
-    configuration.logger("error", {
+    configuration.logger.error({
       statusCode: response.statusCode,
       headers: response.headers,
       body: bodyText,
     });
     throw new Error(`access token request failed ${await response.body.text()}`);
   } else {
-    configuration.logger("log", {
+    configuration.logger.info({
       statusCode: response.statusCode,
       headers: response.headers,
       body: bodyText,

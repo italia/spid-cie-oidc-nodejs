@@ -21,6 +21,7 @@
     "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\""
   },
   "dependencies": {
+    "abstract-logging": "^2.0.1",
     "ajv": "^8.11.0",
     "ajv-formats": "^2.1.1",
     "jose": "^4.6.0",

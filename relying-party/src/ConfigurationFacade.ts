@@ -1,14 +1,24 @@
 import { Configuration, JWKs, TrustMark } from "./Configuration";
-import { auditLogRotatingFilesystem } from "./default-implementations/auditLogRotatingFilesystem";
 import { deriveFiscalNumberUserIdentifier } from "./default-implementations/deriveFiscalNumberUserIdentifier";
-import { loadOrCreateJWKSFromFilesystem } from "./default-implementations/loadOrCreateJWKSFromFilesystem";
-import { loadTrustMarksFromFilesystem } from "./default-implementations/loadTrustMarksFromFilesystem";
-import { logRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";
+import { AbstractLogging } from "./Logger";
 import { readJSON } from "./utils";
+
+const defaultLogger: AbstractLogging = {
+  fatal: console.error,
+  error: console.error,
+  warn: console.warn,
+  debug: console.debug,
+  info: console.info,
+  trace: console.trace,
+};
+
+function defaultAuditLogger(message: any) {
+  console.error("Missing audit logger.", message);
+}
 
 type MandatoryConfiguration = Pick<
   Configuration,
-  "client_id" | "client_name" | "trust_anchors" | "identity_providers"
+  "client_id" | "client_name" | "trust_anchors" | "identity_providers" | "logger" | "auditLogger"
 >;
 
 type AdditionalConfiguration = {
@@ -48,6 +58,8 @@ export async function ConfigurationFacade({
   private_jwks_path,
   trust_marks,
   trust_marks_path,
+  logger = defaultLogger,
+  auditLogger = defaultAuditLogger,
   ...rest
 }: ConfigurationFacadeOptions): Promise<Configuration> {
   if (public_jwks != null && public_jwks_path != null) {
@@ -82,8 +94,6 @@ export async function ConfigurationFacade({
     trust_marks = [];
   }
 
-  const logger = logRotatingFilesystem;
-  const auditLogger = auditLogRotatingFilesystem;
   const deriveUserIdentifier = deriveFiscalNumberUserIdentifier;
 
   return {
@@ -145,9 +155,9 @@ export async function ConfigurationFacade({
       // TODO This should be configurable
       client_id + "callback",
     ],
-    deriveUserIdentifier,
     logger,
     auditLogger,
+    deriveUserIdentifier,
     ...rest,
   };
 }

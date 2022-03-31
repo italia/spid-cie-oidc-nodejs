@@ -42,7 +42,7 @@ export async function RevocationRequest(configuration: Configuration, user_info:
     };
     accessTokenRequestEntity.revoked = true;
     await dataSource.manager.save(accessTokenRequestEntity); // TODO refactor to a better places
-    configuration.logger("log", {
+    configuration.logger.info({
       url,
       method: "POST",
       headers: {
@@ -60,13 +60,13 @@ export async function RevocationRequest(configuration: Configuration, user_info:
     });
     const bodyText = await response.body.text();
     if (response.statusCode !== 200) {
-      configuration.logger("warn", {
+      configuration.logger.warn({
         statusCode: response.statusCode,
         headers: response.headers,
         body: bodyText,
       });
     } else {
-      configuration.logger("log", {
+      configuration.logger.info({
         statusCode: response.statusCode,
         headers: response.headers,
         body: bodyText,

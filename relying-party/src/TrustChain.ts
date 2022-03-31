@@ -41,7 +41,7 @@ async function TrustChain(
     ...identity_provider_entity_configuration,
     metadata,
   };
-  configuration.logger("log", {
+  configuration.logger.info({
     relying_party,
     identity_provider,
     trust_anchor,

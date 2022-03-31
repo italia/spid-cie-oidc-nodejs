@@ -5,11 +5,16 @@ import {
   AgnosticRequest,
   AgnosticResponse,
   EndpointHandlers,
+  createLogRotatingFilesystem,
+  createAuditLogRotatingFilesystem,
 } from "spid-cie-oidc";
 
 main();
 async function main() {
   const PORT = 3000;
+
+  const auditLogger = createAuditLogRotatingFilesystem();
+  const logger = createLogRotatingFilesystem();
 
   const {
     validate,
@@ -21,12 +26,13 @@ async function main() {
   } = EndpointHandlers({
     client_id: `http://127.0.0.1:${PORT}/oidc/rp/`,
     client_name: "My Application",
-    contacts: ["me@mail.com"],
     trust_anchors: ["http://127.0.0.1:8000/"],
     identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
     public_jwks_path: "./public.jwks.json",
     private_jwks_path: "./private.jwks.json",
     trust_marks_path: "./trust_marks.json",
+    logger,
+    auditLogger,
   });
 
   await validate();

@@ -30,7 +30,8 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
     async entityConfiguration(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
       const configuration = await setupConfiguration();
 
-      configuration.logger("info", { request });
+      configuration.logger.info({ request });
+
       try {
         const jws = await EntityConfiguration(configuration);
         const response = {
@@ -38,10 +39,10 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
           headers: { "Content-Type": "application/entity-statement+jwt" },
           body: jws,
         };
-        configuration.logger("info", { response });
+        configuration.logger.info({ response });
         return response;
       } catch (error) {
-        configuration.logger("error", error);
+        configuration.logger.error(error);
         return { status: 500 };
       }
     },
@@ -49,7 +50,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
     async providerList(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
       const configuration = await setupConfiguration();
 
-      configuration.logger("debug", { request });
+      configuration.logger.debug({ request });
       try {
         const response = {
           status: 200,
@@ -60,10 +61,10 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
             })
           ),
         };
-        configuration.logger("debug", { request });
+        configuration.logger.debug({ request });
         return response;
       } catch (error) {
-        configuration.logger("error", error);
+        configuration.logger.error(error);
         return { status: 500 };
       }
     },
@@ -79,7 +80,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
     ): Promise<AgnosticResponse> {
       const configuration = await setupConfiguration();
 
-      configuration.logger("info", { request });
+      configuration.logger.info({ request });
       try {
         const provider = request.query.provider as string;
         if (!isString(provider)) {
@@ -109,14 +110,14 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
           prompt,
         });
         const response = { status: 302, headers: { Location: redirectUrl } };
-        configuration.logger("info", { response });
+        configuration.logger.info({ response });
         return response;
       } catch (error) {
         if (error instanceof BadRequestError) {
-          configuration.logger("info", { error });
+          configuration.logger.info({ error });
           return { status: 400, body: error.message };
         } else {
-          configuration.logger("error", error);
+          configuration.logger.error(error);
           return { status: 500 };
         }
       }
@@ -127,7 +128,8 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
     ): Promise<AgnosticResponse> {
       const configuration = await setupConfiguration();
 
-      configuration.logger("log", { request });
+      configuration.logger.info({ request });
+
       try {
         if ("error" in request.query) {
           if (!isString(request.query.error)) {
@@ -143,7 +145,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ error, error_description }),
           };
-          configuration.logger("info", { response });
+          configuration.logger.info({ response });
           return response;
         } else if ("code" in request.query) {
           if (!isString(request.query.code)) {
@@ -180,10 +182,10 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
         }
       } catch (error) {
         if (error instanceof BadRequestError) {
-          configuration.logger("warn", { error });
+          configuration.logger.warn({ error });
           return { status: 400, body: error.message };
         } else {
-          configuration.logger("error", error);
+          configuration.logger.error(error);
           return { status: 500 };
         }
       }
@@ -192,21 +194,21 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
     async revocation(request: AgnosticRequest<{ user_info: UserInfo }>): Promise<AgnosticResponse> {
       const configuration = await setupConfiguration();
 
-      configuration.logger("log", { request });
+      configuration.logger.info({ request });
       try {
         if (!request.query.user_info) {
           throw new BadRequestError("user_info is mandatory parameter");
         }
         await RevocationRequest(configuration, request.query.user_info);
         const response = { status: 200 };
-        configuration.logger("log", { response });
+        configuration.logger.info({ response });
         return response;
       } catch (error) {
         if (error instanceof BadRequestError) {
-          configuration.logger("warn", { error });
+          configuration.logger.warn({ error });
           return { status: 400, body: error.message };
         } else {
-          configuration.logger("error", error);
+          configuration.logger.error(error);
           return { status: 500 };
         }
       }

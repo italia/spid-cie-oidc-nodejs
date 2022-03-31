@@ -2,6 +2,7 @@ import * as jose from "jose";
 import { inferAlgForJWK, isValidURL, LogLevel } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
 import { UserInfo } from "./UserInfoRequest";
+import { AbstractLogging } from "./Logger";
 
 export type TrustMark = { id: string; trust_mark: string };
 export type JWKs = { keys: Array<jose.JWK> };
@@ -92,7 +93,7 @@ export type Configuration = {
    * a function that will be called to log detailed events and exceptions
    * @see {@link logRotatingFilesystem} for an example
    */
-  logger(level: LogLevel, message: Error | string | object | unknown): void;
+  logger: AbstractLogging;
 
   /**
    * a function that will be called to log mandatory details that must be stored for 24 months (such as access_token, refresh_token, id_token)
@@ -179,9 +180,11 @@ export async function validateConfiguration(configuration: Configuration) {
       );
     }
   }
-  if (typeof configuration.logger !== "function") {
-    throw new Error(`configuration: logger must be a function`);
+
+  if (typeof configuration.logger !== "object") {
+    throw new Error(`configuration: logger must be an object conforming to the Abstract Logging interface`);
   }
+
   if (typeof configuration.auditLogger !== "function") {
     throw new Error(`configuration: auditLogger must be a function`);
   }
