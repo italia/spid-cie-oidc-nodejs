@@ -1,7 +1,10 @@
 import * as jose from "jose";
-import { inferAlgForJWK, isValidEmail, isValidURL, LogLevel } from "./utils";
+import { inferAlgForJWK, isValidURL, LogLevel } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
 import { UserInfo } from "./UserInfoRequest";
+
+export type TrustMark = { id: string; trust_mark: string };
+export type JWKs = { keys: Array<jose.JWK> };
 
 /**
  * This configuration must be done on the relying party side
@@ -14,33 +17,42 @@ export type Configuration = {
    * The relying party must be reachable on this url from outside
    */
   client_id: string;
-  /** himan readable name of this application */
+
+  /**
+   * Human-readable name of this application
+   */
   client_name: string;
+
   /**
    * urls that identifies trust anchors
    *
    * @example ["https://registry.spid.gov.it/"]
    */
   trust_anchors: Array<string>;
+
   /**
    * OPTIONAL. JSON array with one or more strings representing contact persons at the entity.
    * These MAY contain names, e-mail addresses, descriptions, phone numbers, etc.
-   * 
+   *
    * See the [relevant specification for OpenID](https://openid.net/specs/openid-connect-federation-1_0.html#rfc.section.4.6).
    */
-  contacts: Array<string>;
+  contacts?: Array<string>;
+
   /**
    * urls that identifies identity providers
    * @example ["https://spid.ag-pub-full.it/"]
    */
   identity_providers: Array<string>;
+
   redirect_uris: Array<string>;
+
   /**
    * you obtain these during onboarding process, they are needed for security purposes
    *
    * load them from filesystem or database
    */
-  trust_marks: Array<{ id: string; trust_mark: string }>;
+  trust_marks: Array<TrustMark>;
+
   /**
    * jwks format of your public keys
    *
@@ -50,30 +62,38 @@ export type Configuration = {
    *
    * you can generate them with {@link generateJWKS}
    */
-  public_jwks: { keys: Array<jose.JWK> };
+  public_jwks: JWKs;
+
   /** @see {@link Configuration.public_jwks} */
-  private_jwks: { keys: Array<jose.JWK> };
+  private_jwks: JWKs;
+
   application_type: "web";
   response_types: Array<"code">;
   scope: Array<"openid" | "offline_access">;
   token_endpoint_auth_method: Array<"private_key_jwt">;
+
   providers: Record<
     string,
     {
       profile: {}; // TODO
+
       /** what information to request about user from provider */
-      requestedClaims: Record<string, null | { essential: true }>;
+      requestedClaims: Record<string, Record<string, null | { essential: true }>>;
     }
   >;
+
   /** jwt default expiration in seconds */
   federation_default_exp: number;
+
   /** this function will be used to derive a user unique identifier from claims */
   deriveUserIdentifier(user_info: UserInfo): string;
+
   /**
    * a function that will be called to log detailed events and exceptions
    * @see {@link logRotatingFilesystem} for an example
    */
   logger(level: LogLevel, message: Error | string | object | unknown): void;
+
   /**
    * a function that will be called to log mandatory details that must be stored for 24 months (such as access_token, refresh_token, id_token)
    * @see {@link auditLogRotatingFilesystem} for an example
@@ -85,11 +105,13 @@ export async function validateConfiguration(configuration: Configuration) {
   if (!isValidURL(configuration.client_id)) {
     throw new Error(`configuration: client_id must be a valid url ${configuration.client_id}`);
   }
-  for (const email of configuration.contacts) {
+
+  /*for (const email of configuration.contacts) {
     if (!isValidEmail(email)) {
       throw new Error(`configuration: contacts must be alist of valid emails ${email}`);
     }
-  }
+  }*/
+
   if (configuration.application_type !== "web") {
     throw new Error(`configuration: application_type must be "web"`);
   }

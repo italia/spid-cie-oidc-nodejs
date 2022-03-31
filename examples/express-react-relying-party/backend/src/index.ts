@@ -2,7 +2,6 @@ import express, { Request, Response } from "express";
 import path from "path";
 import session from "express-session";
 import {
-  ConfigurationFacade,
   AgnosticRequest,
   AgnosticResponse,
   EndpointHandlers,
@@ -12,21 +11,25 @@ main();
 async function main() {
   const PORT = 3000;
 
-  const configuration = await ConfigurationFacade({
-    client_id: `http://127.0.0.1:${PORT}/oidc/rp/`,
-    client_name: "My Application",
-    contacts: ["me@mail.com"],
-    trust_anchors: ["http://127.0.0.1:8000/"],
-    identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
-  });
-
   const {
+    validate,
     providerList,
     entityConfiguration,
     authorization,
     callback,
     revocation,
-  } = await EndpointHandlers(configuration);
+  } = EndpointHandlers({
+    client_id: `http://127.0.0.1:${PORT}/oidc/rp/`,
+    client_name: "My Application",
+    contacts: ["me@mail.com"],
+    trust_anchors: ["http://127.0.0.1:8000/"],
+    identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
+    public_jwks_path: "./public.jwks.json",
+    private_jwks_path: "./private.jwks.json",
+    trust_marks_path: "./trust_marks.json",
+  });
+
+  await validate();
 
   function adaptRequest(req: Request): AgnosticRequest<any> {
     return {
