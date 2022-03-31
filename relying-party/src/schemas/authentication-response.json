@@ -1,0 +1,48 @@
+{
+  "type": "object",
+  "oneOf": [
+    {
+      "type": "object",
+      "properties": {
+        "code": {
+          "title": "Code",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "minLength": 32,
+          "type": "string"
+        }
+      },
+      "required": ["code", "state"]
+    },
+    {
+      "type": "object",
+      "properties": {
+        "error": {
+          "title": "Error",
+          "enum": [
+            "invalid_request",
+            "unauthorized_client",
+            "access_denied",
+            "unsupported_response_type",
+            "invalid_scope",
+            "server_error",
+            "temporarily_unavailable"
+          ],
+          "type": "string"
+        },
+        "error_description": {
+          "title": "Error Description",
+          "type": "string"
+        },
+        "state": {
+          "title": "State",
+          "minLength": 32,
+          "type": "string"
+        }
+      },
+      "required": ["error", "error_description", "state"]
+    }
+  ]
+}

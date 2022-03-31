@@ -57,7 +57,7 @@ export type Configuration = {
     {
       profile: {}; // TODO
       /** what information to request about user from provider */
-      requestedClaims: unknown;
+      requestedClaims: Record<string, null | { essential: true }>;
     }
   >;
   /** jwt default expiration in seconds */

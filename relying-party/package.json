@@ -21,6 +21,8 @@
     "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\""
   },
   "dependencies": {
+    "ajv": "^8.11.0",
+    "ajv-formats": "^2.1.1",
     "jose": "^4.6.0",
     "lodash": "^4.17.21",
     "reflect-metadata": "^0.1.13",
@@ -32,6 +34,7 @@
     "winston-daily-rotate-file": "^4.6.1"
   },
   "devDependencies": {
+    "@rollup/plugin-json": "^4.1.0",
     "@types/jest": "^27.4.1",
     "@types/lodash": "^4.14.180",
     "@types/node": "^16.11.10",

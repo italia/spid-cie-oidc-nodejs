@@ -19,7 +19,7 @@ More detailed descriptions are provided with [JSDoc](https://jsdoc.app/about-get
 ```typescript
 import { ConfigurationFacade, EndpointHandlers } from 'spid-cie-oidc';
 
-const configuration = ConfigurationFacade({
+const configuration = await ConfigurationFacade({
   client_id: "http://127.0.0.1:3000",
   client_name: "My Application",
   contacts: ["me@mail.com"],
@@ -33,7 +33,7 @@ const {
   authorization,
   callback,
   revocation,
-} = EndpointHandlers(configuration);
+} = await EndpointHandlers(configuration);
 ```
 
 These endpoints must be exposed by your application. (see JSDoc for the purpose of each endpoint)
