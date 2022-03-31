@@ -6,14 +6,14 @@ import itProviderIcon from "../components/spid-logo.svg";
 import { useQuery } from "react-query";
 import { FormattedMessage } from "react-intl";
 
+type AvailableProviders = Record<string, Array<Provider>>;
 type Provider = { sub: string; organization_name: string; logo_uri?: string };
 
 export function LandingPage() {
   const providers = useQuery("providers", async () => {
     const response = await fetch("/oidc/rp/providers");
     if (response.status !== 200) throw new Error();
-    const data = await response.json();
-    return data as Array<Provider>;
+    return (await response.json()) as AvailableProviders;
   });
 
   const [isSpidButtonOpen, setIsSpidButtonOpen] = React.useState(false);
@@ -41,11 +41,13 @@ export function LandingPage() {
                     <div className="row mt-3">
                       <div className="col">
                         <span className="badge badge-grey-unical square-corners mb-3 mr-2 ml-0 pr-10 p-2 mw-100">
-                          <a
-                            href="#"
+                          <button
+                            id="spid-idp"
+                            type="button"
                             className="italia-it-button italia-it-button-size-m button-spid"
-                            spid-idp-button="#spid-idp-button-medium-get"
-                            aria-expanded="false"
+                            aria-expanded={isSpidButtonOpen}
+                            aria-haspopup="menu"
+                            aria-controls="spid-idp-list-medium-root-get"
                             onClick={() =>
                               setIsSpidButtonOpen(!isSpidButtonOpen)
                             }
@@ -56,45 +58,53 @@ export function LandingPage() {
                             <span className="italia-it-button-text">
                               <FormattedMessage id="login-with-spid" />
                             </span>
-                          </a>
-                          {isSpidButtonOpen && (
-                            <div
-                              id="spid-idp-button-medium-get"
-                              className="spid-idp-button spid-idp-button-tip spid-idp-button-relative"
-                              style={{ display: "block" }}
+                          </button>
+
+                          <div
+                            id="spid-idp-button-medium-get"
+                            className="spid-idp-button spid-idp-button-tip spid-idp-button-relative"
+                            style={{
+                              display: isSpidButtonOpen ? "block" : "none",
+                            }}
+                          >
+                            <ul
+                              id="spid-idp-list-medium-root-get"
+                              role="menu"
+                              className="spid-idp-button-menu"
+                              aria-orientation="vertical"
+                              aria-labelledby="spid-idp"
+                              style={{
+                                display: isSpidButtonOpen ? "block" : "none",
+                              }}
                             >
-                              <ul
-                                id="spid-idp-list-medium-root-get"
-                                className="spid-idp-button-menu"
-                                aria-labelledby="spid-idp"
-                              >
-                                {providers.data?.map((provider) => {
-                                  return (
-                                    <li
-                                      key={provider.sub}
-                                      className="spid-idp-button-link"
+                              {providers.data?.spid?.map((provider) => {
+                                return (
+                                  <li
+                                    key={provider.sub}
+                                    role="presentation"
+                                    className="spid-idp-button-link"
+                                  >
+                                    <a
+                                      role="menuitem"
+                                      href={`/oidc/rp/authorization?provider=${encodeURIComponent(
+                                        provider.sub
+                                      )}`}
                                     >
-                                      <a
-                                        href={`/oidc/rp/authorization?provider=${encodeURIComponent(
-                                          provider.sub
-                                        )}`}
-                                      >
-                                        <span className="spid-sr-only">
-                                          {provider.organization_name}
-                                        </span>
-                                        <img
-                                          src={
-                                            provider.logo_uri ?? itProviderIcon
-                                          }
-                                          alt=""
-                                        />
-                                      </a>
-                                    </li>
-                                  );
-                                })}
-                              </ul>
-                            </div>
-                          )}
+                                      <span className="spid-sr-only">
+                                        {provider.organization_name}
+                                      </span>
+                                      <img
+                                        src={
+                                          provider.logo_uri ?? itProviderIcon
+                                        }
+                                        alt=""
+                                      />
+                                    </a>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
                         </span>
                         <span className="badge badge-grey-unical square-corners mb-3 mr-2 ml-0 pr-10 p-2 mw-100">
                           <a

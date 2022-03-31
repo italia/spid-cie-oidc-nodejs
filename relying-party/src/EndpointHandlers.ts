@@ -11,6 +11,12 @@ import { CachedTrustChain } from "./TrustChain";
 import { UserInfo, UserInfoRequest } from "./UserInfoRequest";
 import { BadRequestError, isString, isUndefined } from "./utils";
 
+type ProviderInfo = {
+  sub: string;
+  organization_name: string;
+  logo_uri?: string;
+};
+
 export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions) {
   let _configuration: Configuration | null = null;
 
@@ -24,14 +30,43 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
   }
 
   return {
+    /**
+     * Runs the validation of the configuration.
+     */
     async validate() {
       await setupConfiguration();
     },
 
-    async entityConfiguration(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
+    async retrieveAvailableProviders(): Promise<Record<string, Array<ProviderInfo>>> {
       const configuration = await setupConfiguration();
 
-      configuration.logger.info({ request });
+      try {
+        const trust_chains = await Promise.all(
+          configuration.identity_providers.map((identity_providers_id) =>
+            CachedTrustChain(
+              configuration,
+              configuration.client_id,
+              identity_providers_id,
+              configuration.trust_anchors[0] // TODO
+            )
+          )
+        );
+
+        return {
+          spid: trust_chains.filter(Boolean).map((tc) => ({
+            sub: tc.entity_configuration.sub,
+            organization_name: tc.entity_configuration.metadata?.openid_provider?.organization_name,
+            logo_uri: tc.entity_configuration.metadata?.openid_provider?.logo_uri,
+          })),
+        };
+      } catch (error) {
+        configuration.logger.error(error);
+        throw error;
+      }
+    },
+
+    async entityConfiguration(): Promise<AgnosticResponse> {
+      const configuration = await setupConfiguration();
 
       try {
         const jws = await EntityConfiguration(configuration);
@@ -40,43 +75,8 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
           headers: { "Content-Type": "application/entity-statement+jwt" },
           body: jws,
         };
+
         configuration.logger.info({ response });
-        return response;
-      } catch (error) {
-        configuration.logger.error(error);
-        return { status: 500 };
-      }
-    },
-
-    async providerList(request: AgnosticRequest<{}>): Promise<AgnosticResponse> {
-      const configuration = await setupConfiguration();
-
-      configuration.logger.debug({ request });
-
-      const trust_chains = await Promise.all(
-        configuration.identity_providers.map((identity_providers_id) =>
-          CachedTrustChain(
-            configuration,
-            configuration.client_id,
-            identity_providers_id,
-            configuration.trust_anchors[0] // TODO
-          )
-        )
-      );
-
-      try {
-        const response = {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(
-            trust_chains.filter(Boolean).map((tc) => ({
-              sub: tc.entity_configuration.sub,
-              organization_name: tc.entity_configuration.metadata?.openid_provider?.organization_name,
-              logo_uri: tc.entity_configuration.metadata?.openid_provider?.logo_uri,
-            }))
-          ),
-        };
-        configuration.logger.debug({ request });
         return response;
       } catch (error) {
         configuration.logger.error(error);
@@ -96,27 +96,30 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
       const configuration = await setupConfiguration();
 
       configuration.logger.info({ request });
+
       try {
-        const provider = request.query.provider as string;
+        const { provider, scope, redirect_uri, acr_values, prompt } = request.query;
+
         if (!isString(provider)) {
-          throw new BadRequestError("provider is mandatroy parameter");
+          throw new BadRequestError("provider is mandatory parameter");
         }
-        const scope = request.query.scope;
+
         if (!(isString(scope) || isUndefined(scope))) {
           throw new BadRequestError("scope is optional string parameter");
         }
-        const redirect_uri = request.query.redirect_uri;
+
         if (!(isString(redirect_uri) || isUndefined(redirect_uri))) {
           throw new BadRequestError("redirect_uri is optional string parameter");
         }
-        const acr_values = request.query.acr_values;
+
         if (!(isString(acr_values) || isUndefined(acr_values))) {
           throw new BadRequestError("acr_values is optional string parameter");
         }
-        const prompt = request.query.prompt as string;
+
         if (!(isString(prompt) || isUndefined(prompt))) {
           throw new BadRequestError("prompt is optional string parameter");
         }
+
         const redirectUrl = await AuthenticationRequest(configuration, {
           provider,
           scope,
@@ -124,12 +127,16 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
           acr_values,
           prompt,
         });
+
         const response = { status: 302, headers: { Location: redirectUrl } };
+
         configuration.logger.info({ response });
+
         return response;
       } catch (error) {
         if (error instanceof BadRequestError) {
           configuration.logger.info({ error });
+
           return { status: 400, body: error.message };
         } else {
           configuration.logger.error(error);

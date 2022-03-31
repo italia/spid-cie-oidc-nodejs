@@ -18,7 +18,7 @@ async function main() {
 
   const {
     validate,
-    providerList,
+    retrieveAvailableProviders,
     entityConfiguration,
     authorization,
     callback,
@@ -63,9 +63,7 @@ async function main() {
   app.use(session({ secret: "spid-cie-oidc-nodejs" }));
 
   app.get("/oidc/rp/providers", async (req, res) => {
-    const request = adaptRequest(req);
-    const response = await providerList(request);
-    adaptReponse(response, res);
+    res.json(await retrieveAvailableProviders());
   });
 
   app.get("/oidc/rp/authorization", async (req, res) => {
@@ -103,7 +101,7 @@ async function main() {
 
   app.get("/oidc/rp/.well-known/openid-federation", async (req, res) => {
     const request = adaptRequest(req);
-    const response = await entityConfiguration(request);
+    const response = await entityConfiguration();
     adaptReponse(response, res);
   });
 
