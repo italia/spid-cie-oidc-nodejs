@@ -7,7 +7,10 @@ import {
   createAuditLogRotatingFilesystem,
 } from "spid-cie-oidc";
 
-const PORT = 3000;
+const port = process.env.PORT ?? 3000;
+const client_id = process.env.CLIENT_ID ?? `http://127.0.0.1:${port}/oidc/rp/`
+const trust_anchors = process.env.TRUST_ANCHOR ? [process.env.TRUST_ANCHOR] : ["http://127.0.0.1:8000/"]
+const identity_providers = process.env.IDENTITY_PROVIDER ? [process.env.IDENTITY_PROVIDER] : ["http://127.0.0.1:8000/oidc/op/"]
 
 const auditLogger = createAuditLogRotatingFilesystem();
 const logger = createLogRotatingFilesystem();
@@ -20,11 +23,11 @@ const {
   manageCallback,
   revokeAccessTokensByUserIdentifier,
 } = EndpointHandlers({
-  client_id: `http://127.0.0.1:${PORT}/oidc/rp/`,
+  client_id,
   client_name: "My Application",
-  trust_anchors: ["http://127.0.0.1:8000/"],
+  trust_anchors,
   identity_providers: {
-    spid: ["http://127.0.0.1:8000/oidc/op/"],
+    spid: identity_providers,
     cie: ["http://127.0.0.1:8002/oidc/op/"],
   },
   public_jwks_path: "./public.jwks.json",
@@ -138,8 +141,8 @@ app.get("*", (req, res) =>
   res.sendFile(path.resolve("frontend/build/index.html"))
 );
 
-app.listen(PORT, () => {
-  console.log(`Open browser at http://127.0.0.1:${PORT}`);
+app.listen(port, () => {
+  console.log(`Open browser at http://127.0.0.1:${port}`);
 });
 
 // TODO github actions per pushare docker image

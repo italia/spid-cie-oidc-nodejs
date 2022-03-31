@@ -6,12 +6,24 @@ services:
   trust-anchor.org:
     build:
       context: .
-      dockerfile: ./Dockerfile.django
+      dockerfile: ./docker/Dockerfile.django
     ports:
       - "8000:8000"
+    networks:
+      - oidc-network
   relying-party.org:
     build:
       context: .
-      dockerfile: ./Dockerfile.nodejs
+      dockerfile: ./docker/Dockerfile.nodejs
     ports:
       - "3000:3000"
+    networks:
+      - oidc-network
+    environment:
+      - PORT=3000
+      - CLIENT_ID=http://relying-party.org:3000/oidc/rp/
+      - TRUST_ANCHOR=http://trust-anchor.org:8000/
+      - IDENTITY_PROVIDER=http://trust-anchor.org:8000/oidc/op/
+
+networks:
+  oidc-network:

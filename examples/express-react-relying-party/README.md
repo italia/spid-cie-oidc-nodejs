@@ -44,4 +44,9 @@ This project showcases the relying party.
 
 A docker image containing this example can be built a run:
   - `docker-compose up`
-  - visit `http://127.0.0.1:3000`
+  - add these entries to your hosts file
+```
+127.0.0.1 trust-anchor.org
+127.0.0.1 relying-party.org
+```
+  - visit `http://relying-party.org:3000`
