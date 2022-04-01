@@ -1,9 +1,7 @@
 import * as jose from "jose";
 import { inferAlgForJWK, isValidURL, readJSON } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
-import { UserInfo } from "./requestUserInfo";
 import { consoleLogger } from "./default-implementations/consoleLogger";
-import { deriveFiscalNumberUserIdentifier } from "./default-implementations/deriveFiscalNumberUserIdentifier";
 
 /**
  * This configuration must be done on the relying party side
@@ -86,9 +84,6 @@ export type Configuration = {
 
   /** jwt default expiration in seconds */
   federation_default_exp: number;
-
-  /** this function will be used to derive a user unique identifier from claims */
-  deriveUserIdentifier(user_info: UserInfo): string;
 
   /**
    * a function that will be called to log detailed events and exceptions
@@ -205,8 +200,6 @@ export async function createConfigurationFromConfigurationFacade({
     trust_marks = [];
   }
 
-  const deriveUserIdentifier = deriveFiscalNumberUserIdentifier;
-
   return {
     client_id,
     client_name,
@@ -262,13 +255,9 @@ export async function createConfigurationFromConfigurationFacade({
     public_jwks,
     private_jwks,
     trust_marks,
-    redirect_uris: [
-      // TODO This should be configurable
-      client_id + "callback",
-    ],
+    redirect_uris: [client_id + "callback"],
     logger,
     auditLogger,
-    deriveUserIdentifier,
     ...rest,
   };
 }
@@ -277,12 +266,6 @@ export async function validateConfiguration(configuration: Configuration) {
   if (!isValidURL(configuration.client_id)) {
     throw new Error(`configuration: client_id must be a valid url ${configuration.client_id}`);
   }
-
-  /*for (const email of configuration.contacts) {
-    if (!isValidEmail(email)) {
-      throw new Error(`configuration: contacts must be alist of valid emails ${email}`);
-    }
-  }*/
 
   if (configuration.application_type !== "web") {
     throw new Error(`configuration: application_type must be "web"`);

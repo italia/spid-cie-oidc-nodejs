@@ -2,6 +2,7 @@ import crypto from "crypto";
 import * as fs from "fs";
 import * as jose from "jose";
 import * as uuid from "uuid";
+import * as undici from "undici";
 import { Configuration } from "./configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(payload: Payload, jwk: jose.JWK) {
@@ -89,4 +90,16 @@ export async function fileExists(path: string) {
 
 export async function readJSON<T = any>(path: string) {
   return JSON.parse(await fs.promises.readFile(path, "utf8")) as T;
+}
+
+type HTTPRequest =
+  | { method: "GET"; url: string; headers: Record<string, string> }
+  | { method: "POST"; url: string; headers: Record<string, string>; body: string };
+export async function httpRequest({ url, ...params }: HTTPRequest) {
+  const response = await undici.request(url, params);
+  return {
+    status: response.statusCode,
+    header: response.headers,
+    body: await response.body.text(),
+  };
 }

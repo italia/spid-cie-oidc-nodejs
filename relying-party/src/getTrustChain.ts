@@ -42,6 +42,7 @@ async function getAndVerifyTrustChain(
     metadata,
   };
   configuration.logger.info({
+    message: "Trust chain verified",
     relying_party,
     identity_provider,
     trust_anchor,
@@ -73,9 +74,9 @@ async function getEntityStatement(
   }
   const jws = await response.body.text();
   const { payload } = await jose.compactVerify(jws, async (header) => {
-    if (!header.kid) throw new Error("missing kid in header"); // TODO better error report
+    if (!header.kid) throw new Error("missing kid in header");
     const jwk = superior.jwks.keys.find((key: any) => key.kid === header.kid);
-    if (!jwk) throw new Error("no matching key with kid found"); // TODO better error report
+    if (!jwk) throw new Error("no matching key with kid found");
     return await jose.importJWK(jwk, inferAlgForJWK(jwk));
   });
   // TODO validate
@@ -109,7 +110,6 @@ type EntityStatement = {
   trust_marks: Array<{ id: string; trust_mark: string }>;
 };
 
-// TODO
 type MetadataPolicy = Record<
   string,
   Record<
@@ -164,9 +164,9 @@ function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
 export async function verifyEntityConfiguration(jws: string) {
   const decoded: any = jose.decodeJwt(jws);
   const { payload } = await jose.compactVerify(jws, async (header) => {
-    if (!header.kid) throw new Error("missing kid in header"); // TODO better error report
+    if (!header.kid) throw new Error("missing kid in header");
     const jwk = decoded.jwks.keys.find((key: any) => key.kid === header.kid);
-    if (!jwk) throw new Error("no matching key with kid found"); // TODO better error report
+    if (!jwk) throw new Error("no matching key with kid found");
     return await jose.importJWK(jwk, inferAlgForJWK(jwk));
   });
   const entity_configuration = JSON.parse(new TextDecoder().decode(payload));

@@ -5,14 +5,7 @@ import { AuthenticationRequestEntity } from "./persistance/entity/Authentication
 import { dataSource } from "./persistance/data-source";
 import { getTrustChain } from "./getTrustChain";
 
-export async function createAuthenticationRequest(
-  configuration: Configuration,
-  {
-    provider,
-  }: {
-    provider: string;
-  }
-) {
+export async function createAuthenticationRequest(configuration: Configuration, provider: string) {
   if (!isValidURL(provider)) {
     throw new Error(`provider is not a valid url ${provider}`);
   }
@@ -98,6 +91,7 @@ export async function createAuthenticationRequest(
       provider_jwks,
     })
   );
+  configuration.logger.info({ message: "Authentication request created", url });
   return url;
 }
 

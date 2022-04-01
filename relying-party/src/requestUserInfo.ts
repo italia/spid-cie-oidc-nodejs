@@ -1,50 +1,38 @@
 import * as jose from "jose";
-import { request } from "undici";
 import { Configuration } from "./configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
-import { inferAlgForJWK } from "./utils";
+import { httpRequest, inferAlgForJWK } from "./utils";
 
 export async function requestUserInfo(
   configuration: Configuration,
   authenticationRequestEntity: AuthenticationRequestEntity,
   access_token: string
 ) {
-  // SHOULDDO ensure timeout and ssl is used when doing get request
-  const url = authenticationRequestEntity.userinfo_endpoint;
-  configuration.logger.info({
-    url,
-    method: "GET",
+  const request = {
+    method: "GET" as const,
+    url: authenticationRequestEntity.userinfo_endpoint,
     headers: { Authorization: `Bearer ${access_token}` },
-  });
-  const response = await request(url, {
-    headers: { Authorization: `Bearer ${access_token}` },
-  });
-  const bodyText = await response.body.text();
-  if (response.statusCode !== 200) {
-    configuration.logger.error({
-      statusCode: response.statusCode,
-      headers: response.headers,
-      body: bodyText,
-    });
-    throw new Error(`user info request failed`);
+  };
+  configuration.logger.info({ message: "User info request", request });
+  // SHOULDDO ensure timeout and ssl is respected
+  const response = await httpRequest(request);
+  if (response.status === 200) {
+    const jwe = await response.body;
+    const jws = await decrypt(configuration, jwe);
+    const jwt = await verify(authenticationRequestEntity, jws);
+    configuration.logger.info({ message: "User info request succeeded", request, response });
+    return jwt as unknown as UserInfo; // TODO validate;
   } else {
-    configuration.logger.info({
-      statusCode: response.statusCode,
-      headers: response.headers,
-      body: bodyText,
-    });
+    configuration.logger.error({ message: "User info request failed", request, response });
+    throw new Error(`User info request failed`);
   }
-  const jwe = await bodyText;
-  const jws = await decrypt(configuration, jwe);
-  const jwt = await verify(authenticationRequestEntity, jws);
-  return jwt as unknown as UserInfo; // TODO validate;
 }
 
 async function decrypt(configuration: Configuration, jwe: string) {
   const { plaintext } = await jose.compactDecrypt(jwe, async (header) => {
-    if (!header.kid) throw new Error("missing kid in header"); // TODO better error report
+    if (!header.kid) throw new Error("missing kid in header");
     const jwk = configuration.private_jwks.keys.find((key) => key.kid === header.kid);
-    if (!jwk) throw new Error("no matching key with kid found"); // TODO better error report
+    if (!jwk) throw new Error("no matching key with kid found");
     return await jose.importJWK(jwk, inferAlgForJWK(jwk));
   });
   return new TextDecoder().decode(plaintext);
@@ -53,17 +41,20 @@ async function decrypt(configuration: Configuration, jwe: string) {
 async function verify(authenticationRequestEntity: AuthenticationRequestEntity, jws: string) {
   try {
     const { payload } = await jose.compactVerify(jws, async (header) => {
-      if (!header.kid) throw new Error("missing kid in header"); // TODO better error report
+      if (!header.kid) throw new Error("missing kid in header");
       const jwk = authenticationRequestEntity.provider_jwks.keys.find((key) => key.kid === header.kid);
-      if (!jwk) throw new Error("no matching key with kid found"); // TODO better error report
+      if (!jwk) throw new Error("no matching key with kid found");
       return await jose.importJWK(jwk, inferAlgForJWK(jwk));
     });
     return new TextDecoder().decode(payload);
   } catch (error) {
-    // user info jwt verificatrion failed, this should not happen
-    // TODO check if resolved
-    // TODO file issue upstream
-    return jose.decodeJwt(jws);
+    if ((error as any).code === "ERR_JWS_SIGNATURE_VERIFICATION_FAILED") {
+      // user info jwt verificatrion failed, this should not happen
+      // SHOULDDO file issue upstream
+      return jose.decodeJwt(jws);
+    } else {
+      throw error;
+    }
   }
 }
 

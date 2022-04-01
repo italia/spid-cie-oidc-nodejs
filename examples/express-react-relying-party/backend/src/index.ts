@@ -3,6 +3,8 @@ import path from "path";
 import session from "express-session";
 import {
   createRelyingParty,
+  UserInfo,
+  Tokens,
   createLogRotatingFilesystem,
   createAuditLogRotatingFilesystem,
 } from "spid-cie-oidc";
@@ -25,7 +27,7 @@ const {
   createEntityConfigurationResponse,
   createAuthorizationRedirectURL,
   manageCallback,
-  revokeAccessTokensByUserIdentifier,
+  revokeTokens,
 } = createRelyingParty({
   client_id,
   client_name: "My Application",
@@ -48,12 +50,11 @@ validateConfiguration().catch((error) => {
 
 const app = express();
 
-// TODO use encrypted cookie instead or change storage for production
 app.use(session({ secret: "spid-cie-oidc-nodejs" }));
 declare module "express-session" {
   interface SessionData {
-    user_info?: unknown;
-    user_identifier?: string;
+    user_info?: UserInfo;
+    tokens?: Tokens;
   }
 }
 
@@ -81,7 +82,7 @@ app.get("/oidc/rp/callback", async (req, res) => {
     switch (outcome.type) {
       case "authentication-success": {
         req.session.user_info = outcome.user_info;
-        req.session.user_identifier = outcome.user_identifier;
+        req.session.tokens = outcome.tokens;
         res.redirect(`/attributes`);
         break;
       }
@@ -102,16 +103,14 @@ app.get("/oidc/rp/callback", async (req, res) => {
 
 app.get("/oidc/rp/revocation", async (req, res) => {
   try {
-    if (!req.session.user_identifier) {
-      res.status(400).json({ error: "user_identifier not found in session" });
-      return;
+    if (!req.session.tokens) {
+      res.status(400).json({ error: "user is not logged in" });
+    } else {
+      await revokeTokens(req.session.tokens);
+      req.session.destroy(() => {
+        res.json({ message: "user logged out" });
+      });
     }
-    const revokedTokenCount = await revokeAccessTokensByUserIdentifier(
-      req.session.user_identifier
-    );
-    req.session.destroy(() => {
-      res.json({ revokedTokenCount });
-    });
   } catch (error) {
     res.status(500).json(error);
   }
@@ -148,7 +147,3 @@ app.get("*", (req, res) =>
 app.listen(port, () => {
   console.log(`Open browser at http://127.0.0.1:${port}`);
 });
-
-// TODO github actions per pushare docker image
-// TODO session (create, destroy, update) default implementation ecrypted cookie
-// TODO authorizationRequest access token storage default implementation in memory?

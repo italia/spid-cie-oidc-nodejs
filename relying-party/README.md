@@ -211,9 +211,10 @@ The `manageCallback` function **MUST** be called only once for each time this en
 
 Then `manageCallback` function will return a Promise that can 
   - resolve to:
-    - `{ type: "authentication-success", user_info: "...", user_identifier: "..."}` (if the user has granted access)
-      - in this case you as you must:
-        - store the user_info in the server side session
+    - `{ type: "authentication-success", user_info: "...", tokens: {...}}` (if the user has granted access)
+      - in this case you as you:
+        - can store the user_info in the server side session
+        - **MUST** store the `tokens` in the server side session (it will be used later to logout the user)
         - redirect or render a page to the user
     - `{ type: "authentication-error", error: "...", error_description: "..."}` (if the user has denied access or some error occurs during the authentication process on the identity provider server side)
       - i this case you must:
@@ -230,7 +231,7 @@ app.get("/callback", (req, res) => {
         case "authentication-success": {
           // store the user_info in the session
           req.session.user_info = outcome.user_info;
-          req.session.user_identifier = outcome.user_identifier;
+          req.session.tokens = outcome.tokens;
           // redirect to a page where the user can continue to use the application because the authentication was successful
           res.redirect(`/attributes`);
           break;
@@ -257,19 +258,21 @@ app.get("/callback", (req, res) => {
 
 This is a User-facing Endpoint that can be served on arbitrary route, it can return a JSON response for example if called from fronted or render static html.
 
-`revokeAccessTokensByUserIdentifier(user_identifier)` revokes all access tokens issued to the user identified by `user_identifier`.
+`revokeTokens(tokens)` revokes all access tokens.
 
-The `user_identifier` is obtained by calling `configuration.deriveUserIdentifier(user_info)` function.
+You **MUST** have saved `tokens` from a previus call to `manageCallback` into the session.
+
+After token revocation you **MUST** destroy the sesssion.
 
 For example (with Express):
 
 ```typescript
 app.get("/logout", (req, res) => {
-  if (!req.session.user_identifier) {
+  if (!req.session.tokens) {
     res.status(400).json({ error: "user is not logged in" });
     return;
   }
-  revokeAccessTokensByUserIdentifier(req.session.user_identifier)
+  revokeTokens(req.session.tokens)
     .then(() => {
       req.session.destroy(() => {
         res.json({ message: "user logged out" })

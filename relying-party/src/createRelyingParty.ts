@@ -1,11 +1,15 @@
 import { requestAccessToken } from "./requestAccessToken";
 import { createAuthenticationRequest } from "./createAuthenticationRequest";
-import { Configuration, createConfigurationFromConfigurationFacade, ConfigurationFacadeOptions, validateConfiguration } from "./configuration";
+import {
+  Configuration,
+  createConfigurationFromConfigurationFacade,
+  ConfigurationFacadeOptions,
+  validateConfiguration,
+} from "./configuration";
 import { createEntityConfiguration } from "./createEntityConfiguration";
 import { dataSource } from "./persistance/data-source";
-import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
-import { revokeAccessToken } from "./revokeAccessToken";
+import { revokeAccessToken, Tokens } from "./revokeAccessToken";
 import { getTrustChain } from "./getTrustChain";
 import { requestUserInfo } from "./requestUserInfo";
 import { isString, isUndefined } from "./utils";
@@ -84,16 +88,11 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
 
     async createAuthorizationRedirectURL(provider: string) {
       const configuration = await setupConfiguration();
-
       try {
         if (!isString(provider)) {
           throw new Error("provider is mandatory parameter");
         }
-        const authenticationRedirectUrl = await createAuthenticationRequest(configuration, {
-          provider,
-        });
-        configuration.logger.info({ authenticationRedirectUrl });
-        return authenticationRedirectUrl;
+        return await await createAuthenticationRequest(configuration, provider);
       } catch (error) {
         configuration.logger.error(error);
         throw error;
@@ -103,7 +102,7 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
     async manageCallback(query: { code: string; state: string } | { error: string; error_description?: string }) {
       const configuration = await setupConfiguration();
 
-      configuration.logger.info({ callback: { query } });
+      configuration.logger.info({ message: "Callback function called", query });
       try {
         if ("error" in query) {
           if (!isString(query.error)) {
@@ -112,16 +111,8 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
           if (!(isString(query.error_description) || isUndefined(query.error_description))) {
             throw new Error("error_description is optional string parameter");
           }
-          configuration.logger.info({
-            type: "authentication-error",
-            error: query.error,
-            error_description: query.error_description,
-          });
-          return {
-            type: "authentication-error" as const,
-            error: query.error,
-            error_description: query.error_description,
-          };
+          configuration.logger.info({ message: "Callback function called with error", query });
+          return { type: "authentication-error" as const, ...query };
         } else if ("code" in query) {
           if (!isString(query.code)) {
             throw new Error("code is mandatory string parameter");
@@ -129,26 +120,29 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
           if (!isString(query.state)) {
             throw new Error("state is mandatory string parameter");
           }
-          const { state, code } = query;
           const authentication_request = await dataSource.manager.findOne(AuthenticationRequestEntity, {
-            where: { state },
+            where: { state: query.state },
           });
           if (!authentication_request) {
-            throw new Error(`authentication request not found for state ${state}`);
+            configuration.logger.warn({
+              message: "Callback function called with code but corresponding authentication with not found",
+              query,
+            });
+            throw new Error(`authentication request not found for state ${query.state}`);
           }
-          const { id_token, access_token } = await requestAccessToken(configuration, authentication_request, { code });
-          const user_info = await requestUserInfo(configuration, authentication_request, access_token);
-          const user_identifier = configuration.deriveUserIdentifier(user_info);
-          await dataSource.manager.save(
-            dataSource.getRepository(AccessTokenResponseEntity).create({
-              user_identifier,
-              authentication_request,
-              id_token,
-              access_token,
-              revoked: false,
-            })
+          const { id_token, access_token, refresh_token } = await requestAccessToken(
+            configuration,
+            authentication_request,
+            query.code
           );
-          return { type: "authentication-success" as const, user_info, user_identifier };
+          const user_info = await requestUserInfo(configuration, authentication_request, access_token);
+          const tokens: Tokens = {
+            id_token,
+            access_token,
+            refresh_token,
+            revocation_endpoint: authentication_request.revocation_endpoint,
+          };
+          return { type: "authentication-success" as const, user_info, tokens };
         } else {
           throw new Error(`callback type not supported ${JSON.stringify(query)}`);
         }
@@ -158,13 +152,10 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
       }
     },
 
-    async revokeAccessTokensByUserIdentifier(user_identifier: string) {
+    async revokeTokens(tokens: Tokens) {
       const configuration = await setupConfiguration();
-
-      configuration.logger.info({ type: "revocation", user_identifier });
       try {
-        const revokeTokensCount = await revokeAccessToken(configuration, user_identifier);
-        return revokeTokensCount;
+        return await revokeAccessToken(configuration, tokens);
       } catch (error) {
         configuration.logger.error(error);
         throw error;
