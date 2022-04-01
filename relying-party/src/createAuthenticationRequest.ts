@@ -1,11 +1,11 @@
 import crypto from "crypto";
 import { createJWS, generateRandomString, getPrivateJWKforProvider, isValidURL, makeIat } from "./utils";
-import { Configuration } from "./Configuration";
+import { Configuration } from "./configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { dataSource } from "./persistance/data-source";
-import { getTrustChain } from "./TrustChain";
+import { getTrustChain } from "./getTrustChain";
 
-export async function AuthenticationRequest(
+export async function createAuthenticationRequest(
   configuration: Configuration,
   {
     provider,

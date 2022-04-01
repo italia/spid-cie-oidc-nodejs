@@ -1,4 +1,4 @@
-import { UserInfo } from "../UserInfoRequest";
+import { UserInfo } from "../requestUserInfo";
 
 export function deriveFiscalNumberUserIdentifier(user_info: UserInfo) {
   const userIdentifierFields = ["https://attributes.spid.gov.it/fiscalNumber", "fiscalNumber", "sub"];

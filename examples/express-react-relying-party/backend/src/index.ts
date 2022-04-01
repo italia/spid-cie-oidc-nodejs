@@ -2,15 +2,19 @@ import express from "express";
 import path from "path";
 import session from "express-session";
 import {
-  EndpointHandlers,
+  createRelyingParty,
   createLogRotatingFilesystem,
   createAuditLogRotatingFilesystem,
 } from "spid-cie-oidc";
 
 const port = process.env.PORT ?? 3000;
-const client_id = process.env.CLIENT_ID ?? `http://127.0.0.1:${port}/oidc/rp/`
-const trust_anchors = process.env.TRUST_ANCHOR ? [process.env.TRUST_ANCHOR] : ["http://127.0.0.1:8000/"]
-const identity_providers = process.env.IDENTITY_PROVIDER ? [process.env.IDENTITY_PROVIDER] : ["http://127.0.0.1:8000/oidc/op/"]
+const client_id = process.env.CLIENT_ID ?? `http://127.0.0.1:${port}/oidc/rp/`;
+const trust_anchors = process.env.TRUST_ANCHOR
+  ? [process.env.TRUST_ANCHOR]
+  : ["http://127.0.0.1:8000/"];
+const identity_providers = process.env.IDENTITY_PROVIDER
+  ? [process.env.IDENTITY_PROVIDER]
+  : ["http://127.0.0.1:8000/oidc/op/"];
 
 const auditLogger = createAuditLogRotatingFilesystem();
 const logger = createLogRotatingFilesystem();
@@ -22,7 +26,7 @@ const {
   createAuthorizationRedirectURL,
   manageCallback,
   revokeAccessTokensByUserIdentifier,
-} = EndpointHandlers({
+} = createRelyingParty({
   client_id,
   client_name: "My Application",
   trust_anchors,

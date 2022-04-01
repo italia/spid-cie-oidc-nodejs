@@ -1,11 +1,10 @@
 import { generateJWKS, noopLogger } from "../src";
-import { ConfigurationFacade } from "../src/ConfigurationFacade";
-import { EndpointHandlers } from "../src/EndpointHandlers";
-import { verifyEntityConfiguration } from "../src/TrustChain";
+import { createRelyingParty } from "../src/createRelyingParty";
+import { verifyEntityConfiguration } from "../src/getTrustChain";
 
 const machinery = (async () => {
   const { public_jwks, private_jwks } = await generateJWKS();
-  const configuration = await ConfigurationFacade({
+  const configuration = {
     client_id: `http://127.0.0.1:3000/oidc/rp/`,
     client_name: "My Application",
     trust_anchors: ["http://127.0.0.1:8000/"],
@@ -14,11 +13,11 @@ const machinery = (async () => {
       cie: ["http://127.0.0.1:8002/oidc/op/"],
     },
     logger: noopLogger,
-    auditLogger() {},
+    auditLogger: () => {},
     public_jwks,
     private_jwks,
-  });
-  const handlers = await EndpointHandlers(configuration);
+  };
+  const handlers = await createRelyingParty(configuration);
   await handlers.validateConfiguration();
   return { configuration, handlers };
 })();

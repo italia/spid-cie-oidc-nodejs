@@ -1,7 +1,7 @@
 import * as winston from "winston";
 import "winston-daily-rotate-file";
 import { GeneralDailyRotateFileTransportOptions } from "winston-daily-rotate-file";
-import { AbstractLogging } from "../Logger";
+import { AbstractLogging } from "../configuration";
 
 export function createLogRotatingFilesystem(
   options?: Pick<GeneralDailyRotateFileTransportOptions, "dirname">

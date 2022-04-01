@@ -1,4 +1,4 @@
-import { AbstractLogging } from "../Logger";
+import { AbstractLogging } from "../configuration";
 
 export const consoleLogger: AbstractLogging = {
   fatal: console.error,

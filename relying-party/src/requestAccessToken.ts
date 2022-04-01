@@ -1,9 +1,9 @@
-import { Configuration } from "./Configuration";
+import { Configuration } from "./configuration";
 import { createJWS, getPrivateJWKforProvider, makeExp, makeIat, makeJti } from "./utils";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { request } from "undici";
 
-export async function AccessTokenRequest(
+export async function requestAccessToken(
   configuration: Configuration,
   authenticationRequestEntity: AuthenticationRequestEntity,
   { code }: { code: string }

@@ -1,8 +1,7 @@
-export { Configuration } from "./Configuration";
-export { ConfigurationFacade } from "./ConfigurationFacade";
+export { Configuration } from "./configuration";
+export { createRelyingParty } from "./createRelyingParty";
 export { generateJWKS } from "./utils";
-export { EndpointHandlers } from "./EndpointHandlers";
-export { UserInfo } from "./UserInfoRequest";
+export { UserInfo } from "./requestUserInfo";
 export { loadOrCreateJWKSFromFilesystem } from "./default-implementations/loadOrCreateJWKSFromFilesystem";
 export { loadTrustMarksFromFilesystem } from "./default-implementations/loadTrustMarksFromFilesystem";
 export { createLogRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";

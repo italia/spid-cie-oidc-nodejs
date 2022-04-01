@@ -1,10 +1,10 @@
 import { request } from "undici";
-import { Configuration } from "./Configuration";
+import { Configuration } from "./configuration";
 import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 import { createJWS, getPrivateJWKforProvider, makeExp, makeIat, makeJti } from "./utils";
 
-export async function RevocationRequest(configuration: Configuration, user_identifier: string) {
+export async function revokeAccessToken(configuration: Configuration, user_identifier: string) {
   const accessTokenRequestEntities = await dataSource.manager.find(AccessTokenResponseEntity, {
     where: { user_identifier, revoked: false },
     relations: { authentication_request: true },

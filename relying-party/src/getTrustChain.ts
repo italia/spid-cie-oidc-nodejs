@@ -5,13 +5,13 @@ import {
   TrustAnchorEntityConfiguration,
   IdentityProviderEntityConfiguration,
   RelyingPartyEntityConfiguration,
-} from "./EntityConfiguration";
+} from "./createEntityConfiguration";
 import { cloneDeep, difference, intersection } from "lodash";
-import { Configuration } from "./Configuration";
+import { Configuration } from "./configuration";
 
 // SHOULDDO implement arbitray length tst chain validation
 // SHOULDDO check authority hints
-async function TrustChain(
+async function getAndVerifyTrustChain(
   configuration: Configuration,
   relying_party: string,
   identity_provider: string,
@@ -174,7 +174,7 @@ export async function verifyEntityConfiguration(jws: string) {
   return entity_configuration;
 }
 
-const trustChainCache = new Map<string, Awaited<ReturnType<typeof TrustChain>>>();
+const trustChainCache = new Map<string, Awaited<ReturnType<typeof getAndVerifyTrustChain>>>();
 async function CachedTrustChain(
   configuration: Configuration,
   relying_party: string,
@@ -187,7 +187,7 @@ async function CachedTrustChain(
   if (cached && cached.exp > now) {
     return cached;
   } else {
-    const trust_chain = await TrustChain(configuration, relying_party, identity_provider, trust_anchor);
+    const trust_chain = await getAndVerifyTrustChain(configuration, relying_party, identity_provider, trust_anchor);
     trustChainCache.set(cacheKey, trust_chain);
     return trust_chain;
   }

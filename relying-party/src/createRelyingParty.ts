@@ -1,28 +1,21 @@
-import { AccessTokenRequest } from "./AccessTokenRequest";
-import { AuthenticationRequest } from "./AuthenticationRequest";
-import { Configuration, validateConfiguration } from "./Configuration";
-import { ConfigurationFacade, ConfigurationFacadeOptions } from "./ConfigurationFacade";
-import { EntityConfiguration } from "./EntityConfiguration";
+import { requestAccessToken } from "./requestAccessToken";
+import { createAuthenticationRequest } from "./createAuthenticationRequest";
+import { Configuration, createConfigurationFromConfigurationFacade, ConfigurationFacadeOptions, validateConfiguration } from "./configuration";
+import { createEntityConfiguration } from "./createEntityConfiguration";
 import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
-import { RevocationRequest } from "./RevocationRequest";
-import { getTrustChain } from "./TrustChain";
-import { UserInfoRequest } from "./UserInfoRequest";
+import { revokeAccessToken } from "./revokeAccessToken";
+import { getTrustChain } from "./getTrustChain";
+import { requestUserInfo } from "./requestUserInfo";
 import { isString, isUndefined } from "./utils";
 
-type ProviderInfo = {
-  sub: string;
-  organization_name: string;
-  logo_uri?: string;
-};
-
-export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions) {
+export function createRelyingParty(configurationFacade: ConfigurationFacadeOptions) {
   let _configuration: Configuration | null = null;
 
   async function setupConfiguration() {
     if (_configuration == null) {
-      _configuration = await ConfigurationFacade(configurationFacade);
+      _configuration = await createConfigurationFromConfigurationFacade(configurationFacade);
       await validateConfiguration(_configuration);
     }
 
@@ -37,7 +30,16 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
       await setupConfiguration();
     },
 
-    async retrieveAvailableProviders(): Promise<Record<string, Array<ProviderInfo>>> {
+    async retrieveAvailableProviders(): Promise<
+      Record<
+        string,
+        Array<{
+          sub: string;
+          organization_name: string;
+          logo_uri?: string;
+        }>
+      >
+    > {
       const configuration = await setupConfiguration();
 
       try {
@@ -67,7 +69,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
       const configuration = await setupConfiguration();
 
       try {
-        const jws = await EntityConfiguration(configuration);
+        const jws = await createEntityConfiguration(configuration);
         const response = {
           status: 200,
           headers: { "Content-Type": "application/entity-statement+jwt" },
@@ -87,7 +89,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
         if (!isString(provider)) {
           throw new Error("provider is mandatory parameter");
         }
-        const authenticationRedirectUrl = await AuthenticationRequest(configuration, {
+        const authenticationRedirectUrl = await createAuthenticationRequest(configuration, {
           provider,
         });
         configuration.logger.info({ authenticationRedirectUrl });
@@ -134,8 +136,8 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
           if (!authentication_request) {
             throw new Error(`authentication request not found for state ${state}`);
           }
-          const { id_token, access_token } = await AccessTokenRequest(configuration, authentication_request, { code });
-          const user_info = await UserInfoRequest(configuration, authentication_request, access_token);
+          const { id_token, access_token } = await requestAccessToken(configuration, authentication_request, { code });
+          const user_info = await requestUserInfo(configuration, authentication_request, access_token);
           const user_identifier = configuration.deriveUserIdentifier(user_info);
           await dataSource.manager.save(
             dataSource.getRepository(AccessTokenResponseEntity).create({
@@ -161,7 +163,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
 
       configuration.logger.info({ type: "revocation", user_identifier });
       try {
-        const revokeTokensCount = await RevocationRequest(configuration, user_identifier);
+        const revokeTokensCount = await revokeAccessToken(configuration, user_identifier);
         return revokeTokensCount;
       } catch (error) {
         configuration.logger.error(error);

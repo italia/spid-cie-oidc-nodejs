@@ -1,6 +1,8 @@
+import { AbstractLogging } from "../configuration";
+
 function noop() {}
 
-export const noopLogger = {
+export const noopLogger: AbstractLogging = {
   fatal: noop,
   error: noop,
   warn: noop,

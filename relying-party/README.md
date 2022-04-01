@@ -18,7 +18,7 @@ More detailed descriptions are provided with [JSDoc](https://jsdoc.app/about-get
 
 ```typescript
 import {
-  EndpointHandlers,
+  createRelayingParty,
   createLogRotatingFilesystem,
   createAuditLogRotatingFilesystem,
 } from "spid-cie-oidc";
@@ -31,7 +31,7 @@ const {
   createAuthorizationRedirectURL,
   manageCallback,
   revokeAccessTokensByUserIdentifier,
-} = EndpointHandlers({
+} = createRelayingParty({
   client_id: `http://127.0.0.1:3000/oidc/rp/`,
   client_name: "My Application",
   trust_anchors: ["http://127.0.0.1:8000/"],
@@ -59,10 +59,9 @@ Expressjs example: (see full example [here](../examples/express-react-relying-pa
 
 ```typescript
 app.get("/providers", async (req, res) => {
-  const { status, headers, body } = await providerList();
-  res.status(status);
-  res.set("Content-Type", headers["Content-Type"]);
-  res.send(body);
+  retrieveAvailableProviders().then((providers) => {
+    res.json(providers);
+  });
 })
 ```
 

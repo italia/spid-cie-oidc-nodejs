@@ -1,8 +1,8 @@
-import { Configuration } from "./Configuration";
+import { Configuration } from "./configuration";
 import { createJWS, makeExp, makeIat } from "./utils";
 import * as jose from "jose";
 
-export async function EntityConfiguration(configuration: Configuration) {
+export async function createEntityConfiguration(configuration: Configuration) {
   const iat = makeIat();
   const exp = makeExp(configuration.federation_default_exp);
   const iss = configuration.client_id;

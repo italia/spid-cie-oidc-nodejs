@@ -1,10 +1,10 @@
 import * as jose from "jose";
 import { request } from "undici";
-import { Configuration } from "./Configuration";
+import { Configuration } from "./configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { inferAlgForJWK } from "./utils";
 
-export async function UserInfoRequest(
+export async function requestUserInfo(
   configuration: Configuration,
   authenticationRequestEntity: AuthenticationRequestEntity,
   access_token: string

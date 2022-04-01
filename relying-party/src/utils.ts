@@ -2,7 +2,7 @@ import crypto from "crypto";
 import * as fs from "fs";
 import * as jose from "jose";
 import * as uuid from "uuid";
-import { Configuration } from "./Configuration";
+import { Configuration } from "./configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(payload: Payload, jwk: jose.JWK) {
   const privateKey = await jose.importJWK(jwk, inferAlgForJWK(jwk));
