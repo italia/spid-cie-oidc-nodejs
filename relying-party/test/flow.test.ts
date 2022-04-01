@@ -9,7 +9,10 @@ const machinery = (async () => {
     client_id: `http://127.0.0.1:3000/oidc/rp/`,
     client_name: "My Application",
     trust_anchors: ["http://127.0.0.1:8000/"],
-    identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
+    identity_providers: {
+      spid: ["http://127.0.0.1:8000/oidc/op/"],
+      cie: ["http://127.0.0.1:8002/oidc/op/"],
+    },
     logger: noopLogger,
     auditLogger() {},
     public_jwks,
@@ -49,7 +52,32 @@ describe("test whole flow happy path", () => {
     });
   });
   test("provider list happy path", async () => {
-    // TODO
+    // TODO setup 127.0.0.1:3000 127.0.0.1:8000 127.0.0.1:8002
+    if (false) {
+      const { configuration, handlers } = await machinery;
+      const { retrieveAvailableProviders } = handlers;
+      const providers = await retrieveAvailableProviders();
+      expect(providers).toEqual({
+        spid: [
+          [
+            {
+              sub: "http://127.0.0.1:8000/oidc/op/",
+              organization_name: "SPID OIDC identity provider",
+              logo_uri: "http://127.0.0.1:8000/static/svg/spid-logo-c-lb.svg",
+            },
+          ],
+        ],
+        cie: [
+          [
+            {
+              sub: "http://127.0.0.1:8002/oidc/op/",
+              organization_name: "SPID OIDC identity provider",
+              logo_uri: "http://127.0.0.1:8002/static/images/logo-cie.png",
+            },
+          ],
+        ],
+      });
+    }
   });
   test("authorization redirect url happy path", async () => {
     // TODO

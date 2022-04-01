@@ -17,6 +17,7 @@ export function LandingPage() {
   });
 
   const [isSpidButtonOpen, setIsSpidButtonOpen] = React.useState(false);
+  const [isCieButtonOpen, setIsCieButtonOpen] = React.useState(false);
 
   return (
     <div className="container pt-2 p-3">
@@ -107,9 +108,14 @@ export function LandingPage() {
                           </div>
                         </span>
                         <span className="badge badge-grey-unical square-corners mb-3 mr-2 ml-0 pr-10 p-2 mw-100">
-                          <a
-                            href="#"
+                          <button
+                            id="cie-idp"
+                            type="button"
                             className="italia-it-button italia-it-button-size-m button-cie"
+                            aria-expanded={isCieButtonOpen}
+                            aria-haspopup="menu"
+                            aria-controls="cie-idp-list-medium-root-get"
+                            onClick={() => setIsCieButtonOpen(!isCieButtonOpen)}
                           >
                             <span className="italia-it-button-icon">
                               <img src={cieButtonIcon} alt="" />
@@ -117,7 +123,53 @@ export function LandingPage() {
                             <span className="italia-it-button-text">
                               <FormattedMessage id="login-with-cie" />
                             </span>
-                          </a>
+                          </button>
+
+                          <div
+                            id="cie-idp-button-medium-get"
+                            className="cie-idp-button cie-idp-button-tip cie-idp-button-relative"
+                            style={{
+                              display: isCieButtonOpen ? "block" : "none",
+                            }}
+                          >
+                            <ul
+                              id="cie-idp-list-medium-root-get"
+                              role="menu"
+                              className="cie-idp-button-menu"
+                              aria-orientation="vertical"
+                              aria-labelledby="cie-idp"
+                              style={{
+                                display: isCieButtonOpen ? "block" : "none",
+                              }}
+                            >
+                              {providers.data?.cie?.map((provider) => {
+                                return (
+                                  <li
+                                    key={provider.sub}
+                                    role="presentation"
+                                    className="cie-idp-button-link"
+                                  >
+                                    <a
+                                      role="menuitem"
+                                      href={`/oidc/rp/authorization?${new URLSearchParams(
+                                        { provider: provider.sub }
+                                      )}`}
+                                    >
+                                      <span className="cie-sr-only">
+                                        {provider.organization_name}
+                                      </span>
+                                      <img
+                                        src={
+                                          provider.logo_uri ?? itProviderIcon
+                                        }
+                                        alt=""
+                                      />
+                                    </a>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
                         </span>
                       </div>
                     </div>

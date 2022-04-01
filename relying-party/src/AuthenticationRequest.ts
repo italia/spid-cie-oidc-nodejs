@@ -9,36 +9,15 @@ export async function AuthenticationRequest(
   configuration: Configuration,
   {
     provider,
-    scope = "openid",
-    redirect_uri = configuration.redirect_uris[0],
-    acr_values = "https://www.spid.gov.it/SpidL2", // TODO get from onboarding data
-    prompt = "consent login",
-    profile = "spid",
   }: {
     provider: string;
-    scope?: string;
-    redirect_uri?: string;
-    acr_values?: string;
-    prompt?: string;
-    profile?: string;
   }
 ) {
   if (!isValidURL(provider)) {
     throw new Error(`provider is not a valid url ${provider}`);
   }
-  if (!configuration.identity_providers.includes(provider)) {
+  if (!Object.values(configuration.identity_providers).some((providers) => providers.includes(provider))) {
     throw new Error(`provider is not supported ${provider}`);
-  }
-  if (!isValidURL(redirect_uri)) {
-    throw new Error(`redirect_uri must be a valid url ${redirect_uri}`);
-  }
-  if (prompt !== "consent login") {
-    // SHOULDDO validate prompt inculdes supported values (space separated) and no duplicates
-    throw new Error(`prompt is not supported ${prompt}`);
-  }
-  if (scope !== "openid") {
-    // SHOULDDO validate scope parameter (should be space sperated list of supported scopes, must include openid, no duplicates)
-    throw new Error(`scope is not suppported ${scope}`);
   }
   const identityProviderTrustChain = await getTrustChain(configuration, provider);
   if (!identityProviderTrustChain) {
@@ -51,6 +30,13 @@ export async function AuthenticationRequest(
     revocation_endpoint,
     jwks: provider_jwks,
   } = identityProviderTrustChain.entity_configuration.metadata.openid_provider;
+  const profile = Object.entries(configuration.identity_providers).find(([, providers]) =>
+    providers.includes(provider)
+  )?.[0] as keyof Configuration["identity_providers"];
+  const scope = "openid";
+  const redirect_uri = configuration.redirect_uris[0];
+  const acr_values = "https://www.spid.gov.it/SpidL2"; // TODO get from configuration
+  const prompt = "consent login";
   const endpoint = authorization_endpoint;
   const nonce = generateRandomString(32);
   const state = generateRandomString(32);

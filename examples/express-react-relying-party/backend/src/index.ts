@@ -23,7 +23,10 @@ const {
   client_id: `http://127.0.0.1:${PORT}/oidc/rp/`,
   client_name: "My Application",
   trust_anchors: ["http://127.0.0.1:8000/"],
-  identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
+  identity_providers: {
+    spid: ["http://127.0.0.1:8000/oidc/op/"],
+    cie: ["http://127.0.0.1:8002/oidc/op/"],
+  },
   public_jwks_path: "./public.jwks.json",
   private_jwks_path: "./private.jwks.json",
   trust_marks_path: "./trust_marks.json",
@@ -139,5 +142,6 @@ app.listen(PORT, () => {
   console.log(`Open browser at http://127.0.0.1:${PORT}`);
 });
 
+// TODO github actions per pushare docker image
 // TODO session (create, destroy, update) default implementation ecrypted cookie
 // TODO authorizationRequest access token storage default implementation in memory?

@@ -41,24 +41,22 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
       const configuration = await setupConfiguration();
 
       try {
-        const trust_chains = await Promise.all(
-          configuration.identity_providers.map((identity_providers_id) =>
-            getTrustChain(configuration, identity_providers_id)
+        const getProviderInfo = async (provider: string) => {
+          const trustChain = await getTrustChain(configuration, provider);
+          if (!trustChain) return null;
+          return {
+            sub: trustChain.entity_configuration.sub,
+            organization_name: trustChain.entity_configuration.metadata?.openid_provider?.organization_name,
+            logo_uri: trustChain.entity_configuration.metadata?.openid_provider?.logo_uri,
+          };
+        };
+        return Object.fromEntries(
+          await Promise.all(
+            Object.entries(configuration.identity_providers).map(async ([providerProfile, providers]) => {
+              return [providerProfile, (await Promise.all(providers.map(getProviderInfo))).filter(Boolean)];
+            })
           )
         );
-        return {
-          spid: trust_chains.flatMap((trustChain) => {
-            if (!trustChain) {
-              return [];
-            } else {
-              return {
-                sub: trustChain.entity_configuration.sub,
-                organization_name: trustChain.entity_configuration.metadata?.openid_provider?.organization_name,
-                logo_uri: trustChain.entity_configuration.metadata?.openid_provider?.logo_uri,
-              };
-            }
-          }),
-        };
       } catch (error) {
         configuration.logger.error(error);
         throw error;

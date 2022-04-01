@@ -84,7 +84,7 @@ async function getEntityStatement(
 
 // SHOULDDO memoize by expiration
 async function getEntityConfiguration<T>(url: string): Promise<T> {
-  // TODO when doing post request ensure timeout and ssl is respected
+  // SHOULDDO when doing post request ensure timeout and ssl is respected
   const response = await request(url + ".well-known/openid-federation", {
     method: "GET",
   });
@@ -199,7 +199,7 @@ export async function getTrustChain(configuration: Configuration, provider: stri
       await Promise.all(
         configuration.trust_anchors.map(async (trust_anchor) => {
           try {
-            return CachedTrustChain(configuration, configuration.client_id, provider, trust_anchor);
+            return await CachedTrustChain(configuration, configuration.client_id, provider, trust_anchor);
           } catch (error) {
             configuration.logger.warn(error);
             return null;

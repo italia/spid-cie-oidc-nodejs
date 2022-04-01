@@ -6,6 +6,7 @@ import { AbstractLogging } from "./Logger";
 
 export type TrustMark = { id: string; trust_mark: string };
 export type JWKs = { keys: Array<jose.JWK> };
+type IdentityProviderProfile = "spid" | "cie"
 
 /**
  * This configuration must be done on the relying party side
@@ -41,9 +42,12 @@ export type Configuration = {
 
   /**
    * urls that identifies identity providers
-   * @example ["https://spid.ag-pub-full.it/"]
+   * @example {
+   *  spid: ["https://spid.ag-pub-full.it/"],
+   *  cie: ["https://cie.agid.gov.it/"]
+   * }
    */
-  identity_providers: Array<string>;
+  identity_providers: Record<IdentityProviderProfile, Array<string>>;
 
   redirect_uris: Array<string>;
 
@@ -74,7 +78,7 @@ export type Configuration = {
   token_endpoint_auth_method: Array<"private_key_jwt">;
 
   providers: Record<
-    string,
+    IdentityProviderProfile,
     {
       profile: {}; // TODO
 
@@ -137,11 +141,13 @@ export async function validateConfiguration(configuration: Configuration) {
   if (invalidTrustAnchors.length > 0) {
     throw new Error(`configuration: trust_anchors must be a list of valid urls ${JSON.stringify(invalidTrustAnchors)}`);
   }
-  const invalidProviders = configuration.identity_providers.filter((url) => !isValidURL(url));
-  if (invalidProviders.length > 0) {
-    throw new Error(
-      `configuration: identity_providers must be a list of valid urls ${JSON.stringify(invalidProviders)}`
-    );
+  for (const providerType of ["cie", "spid"] as const) {
+    const invalidProviders = configuration.identity_providers[providerType].filter((url) => !isValidURL(url) && url.endsWith("/"));
+    if (invalidProviders.length > 0) {
+      throw new Error(
+        `configuration: identity_providers must be a list of valid urls ${JSON.stringify(invalidProviders)}`
+      );
+    }
   }
   if (configuration.redirect_uris.length < 1) {
     throw new Error(`configuration: redirect_uris must be at least one`);

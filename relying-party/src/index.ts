@@ -10,3 +10,5 @@ export { createAuditLogRotatingFilesystem } from "./default-implementations/audi
 export { deriveFiscalNumberUserIdentifier } from "./default-implementations/deriveFiscalNumberUserIdentifier";
 export { noopLogger } from "./default-implementations/noopLogger";
 export { consoleLogger } from "./default-implementations/consoleLogger";
+
+// TODO check "configuration.logger" occurences and write more informative logs

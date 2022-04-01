@@ -35,7 +35,10 @@ const {
   client_id: `http://127.0.0.1:3000/oidc/rp/`,
   client_name: "My Application",
   trust_anchors: ["http://127.0.0.1:8000/"],
-  identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
+  identity_providers: {
+    spid: ["http://127.0.0.1:8000/oidc/op/"],
+    cie: ["http://127.0.0.1:8002/oidc/op/"]
+  },
   public_jwks_path: "./public.jwks.json",
   private_jwks_path: "./private.jwks.json",
   trust_marks_path: "./trust_marks.json",

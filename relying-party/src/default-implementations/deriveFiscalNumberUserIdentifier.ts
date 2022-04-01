@@ -1,7 +1,7 @@
 import { UserInfo } from "../UserInfoRequest";
 
 export function deriveFiscalNumberUserIdentifier(user_info: UserInfo) {
-  const userIdentifierFields = ["https://attributes.spid.gov.it/fiscalNumber", "fiscalNumber"];
+  const userIdentifierFields = ["https://attributes.spid.gov.it/fiscalNumber", "fiscalNumber", "sub"];
   if (!(typeof user_info === "object" && user_info !== null)) throw new Error();
   const claimsAsRecord = user_info as Record<string, unknown>;
   for (const userIdentifierField of userIdentifierFields) {
