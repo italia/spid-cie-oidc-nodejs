@@ -86,8 +86,8 @@ export function LandingPage() {
                                   >
                                     <a
                                       role="menuitem"
-                                      href={`/oidc/rp/authorization?provider=${encodeURIComponent(
-                                        provider.sub
+                                      href={`/oidc/rp/authorization?${new URLSearchParams(
+                                        { provider: provider.sub }
                                       )}`}
                                     >
                                       <span className="spid-sr-only">
