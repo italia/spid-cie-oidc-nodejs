@@ -1,5 +1,4 @@
 import * as winston from "winston";
-import { LogLevel } from "../utils";
 import "winston-daily-rotate-file";
 import { GeneralDailyRotateFileTransportOptions } from "winston-daily-rotate-file";
 import { AbstractLogging } from "../Logger";

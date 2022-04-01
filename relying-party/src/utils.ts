@@ -90,7 +90,3 @@ export async function fileExists(path: string) {
 export async function readJSON<T = any>(path: string) {
   return JSON.parse(await fs.promises.readFile(path, "utf8")) as T;
 }
-
-export type LogLevel = "error" | "warn" | "log" | "info" | "debug";
-
-export class BadRequestError extends Error {}

@@ -1,16 +1,9 @@
 import crypto from "crypto";
-import {
-  BadRequestError,
-  createJWS,
-  generateRandomString,
-  getPrivateJWKforProvider,
-  isValidURL,
-  makeIat,
-} from "./utils";
+import { createJWS, generateRandomString, getPrivateJWKforProvider, isValidURL, makeIat } from "./utils";
 import { Configuration } from "./Configuration";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { dataSource } from "./persistance/data-source";
-import { CachedTrustChain } from "./TrustChain";
+import { getTrustChain } from "./TrustChain";
 
 export async function AuthenticationRequest(
   configuration: Configuration,
@@ -31,33 +24,23 @@ export async function AuthenticationRequest(
   }
 ) {
   if (!isValidURL(provider)) {
-    throw new BadRequestError(`provider is not a valid url ${provider}`);
+    throw new Error(`provider is not a valid url ${provider}`);
   }
   if (!configuration.identity_providers.includes(provider)) {
-    throw new BadRequestError(`provider is not supported ${provider}`);
+    throw new Error(`provider is not supported ${provider}`);
   }
   if (!isValidURL(redirect_uri)) {
-    throw new BadRequestError(`redirect_uri must be a valid url ${redirect_uri}`);
+    throw new Error(`redirect_uri must be a valid url ${redirect_uri}`);
   }
   if (prompt !== "consent login") {
     // SHOULDDO validate prompt inculdes supported values (space separated) and no duplicates
-    throw new BadRequestError(`prompt is not supported ${prompt}`);
+    throw new Error(`prompt is not supported ${prompt}`);
   }
   if (scope !== "openid") {
     // SHOULDDO validate scope parameter (should be space sperated list of supported scopes, must include openid, no duplicates)
-    throw new BadRequestError(`scope is not suppported ${scope}`);
+    throw new Error(`scope is not suppported ${scope}`);
   }
-  const identityProviderTrustChain = (
-    await Promise.all(
-      configuration.trust_anchors.map(async (trust_anchor) => {
-        try {
-          return CachedTrustChain(configuration, configuration.client_id, provider, trust_anchor);
-        } catch (error) {
-          return null;
-        }
-      })
-    )
-  ).find((trust_chain) => trust_chain !== null);
+  const identityProviderTrustChain = await getTrustChain(configuration, provider);
   if (!identityProviderTrustChain) {
     throw new Error(`Unable to find trust chain for identity provider ${provider}`);
   }

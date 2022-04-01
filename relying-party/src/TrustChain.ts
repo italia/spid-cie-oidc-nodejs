@@ -175,7 +175,7 @@ export async function verifyEntityConfiguration(jws: string) {
 }
 
 const trustChainCache = new Map<string, Awaited<ReturnType<typeof TrustChain>>>();
-export async function CachedTrustChain(
+async function CachedTrustChain(
   configuration: Configuration,
   relying_party: string,
   identity_provider: string,
@@ -191,4 +191,21 @@ export async function CachedTrustChain(
     trustChainCache.set(cacheKey, trust_chain);
     return trust_chain;
   }
+}
+
+export async function getTrustChain(configuration: Configuration, provider: string) {
+  const identityProviderTrustChain =
+    (
+      await Promise.all(
+        configuration.trust_anchors.map(async (trust_anchor) => {
+          try {
+            return CachedTrustChain(configuration, configuration.client_id, provider, trust_anchor);
+          } catch (error) {
+            configuration.logger.warn(error);
+            return null;
+          }
+        })
+      )
+    ).find((trust_chain) => trust_chain !== null) ?? null;
+  return identityProviderTrustChain;
 }

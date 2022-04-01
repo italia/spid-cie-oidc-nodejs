@@ -1,16 +1,7 @@
 import { Configuration, JWKs, TrustMark } from "./Configuration";
+import { consoleLogger } from "./default-implementations/consoleLogger";
 import { deriveFiscalNumberUserIdentifier } from "./default-implementations/deriveFiscalNumberUserIdentifier";
-import { AbstractLogging } from "./Logger";
 import { readJSON } from "./utils";
-
-const defaultLogger: AbstractLogging = {
-  fatal: console.error,
-  error: console.error,
-  warn: console.warn,
-  debug: console.debug,
-  info: console.info,
-  trace: console.trace,
-};
 
 function defaultAuditLogger(message: any) {
   console.error("Missing audit logger.", message);
@@ -58,7 +49,7 @@ export async function ConfigurationFacade({
   private_jwks_path,
   trust_marks,
   trust_marks_path,
-  logger = defaultLogger,
+  logger = consoleLogger,
   auditLogger = defaultAuditLogger,
   ...rest
 }: ConfigurationFacadeOptions): Promise<Configuration> {
@@ -89,7 +80,15 @@ export async function ConfigurationFacade({
   if (trust_marks != null && trust_marks_path != null) {
     throw new Error(`Cannot use both 'trust_marks' and 'trust_marks_path' in the configuration`);
   } else if (trust_marks_path != null) {
-    trust_marks = await readJSON<TrustMark[]>(trust_marks_path);
+    try {
+      trust_marks = await readJSON<TrustMark[]>(trust_marks_path);
+    } catch (error) {
+      if ((error as any).code === "ENOENT") {
+        trust_marks = [];
+      } else {
+        throw new Error(`Could not load trust_marks from ${trust_marks_path}: ${error}`);
+      }
+    }
   } else if (trust_marks == null) {
     trust_marks = [];
   }

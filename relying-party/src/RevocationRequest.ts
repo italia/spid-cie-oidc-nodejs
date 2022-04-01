@@ -2,15 +2,14 @@ import { request } from "undici";
 import { Configuration } from "./Configuration";
 import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
-import { UserInfo } from "./UserInfoRequest";
 import { createJWS, getPrivateJWKforProvider, makeExp, makeIat, makeJti } from "./utils";
 
-export async function RevocationRequest(configuration: Configuration, user_info: UserInfo) {
-  const user_identifier = configuration.deriveUserIdentifier(user_info);
+export async function RevocationRequest(configuration: Configuration, user_identifier: string) {
   const accessTokenRequestEntities = await dataSource.manager.find(AccessTokenResponseEntity, {
     where: { user_identifier, revoked: false },
     relations: { authentication_request: true },
   });
+  configuration.logger.info({ message: `Revoking active access tokens for ${user_identifier}` });
   for (const accessTokenRequestEntity of accessTokenRequestEntities) {
     const revocation_endpoint = accessTokenRequestEntity.authentication_request.revocation_endpoint;
     const url = revocation_endpoint;
@@ -40,9 +39,8 @@ export async function RevocationRequest(configuration: Configuration, user_info:
       ),
       client_assertion_type,
     };
-    accessTokenRequestEntity.revoked = true;
-    await dataSource.manager.save(accessTokenRequestEntity); // TODO refactor to a better places
     configuration.logger.info({
+      message: `Revoking access token ${access_token.slice(0, 5)} for user ${user_identifier}`,
       url,
       method: "POST",
       headers: {
@@ -61,12 +59,16 @@ export async function RevocationRequest(configuration: Configuration, user_info:
     const bodyText = await response.body.text();
     if (response.statusCode !== 200) {
       configuration.logger.warn({
+        message: `Revoked access token ${access_token.slice(0, 5)} for user ${user_identifier}`,
         statusCode: response.statusCode,
         headers: response.headers,
         body: bodyText,
       });
+      accessTokenRequestEntity.revoked = true;
+      await dataSource.manager.save(accessTokenRequestEntity);
     } else {
       configuration.logger.info({
+        message: `Failed to revoked access token ${access_token.slice(0, 5)} for user ${user_identifier}`,
         statusCode: response.statusCode,
         headers: response.headers,
         body: bodyText,

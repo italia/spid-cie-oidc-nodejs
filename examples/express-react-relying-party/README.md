@@ -28,7 +28,7 @@ This project showcases the relying party.
   - create new profile [here](http://127.0.0.1:8000/admin/spid_cie_oidc_authority/federationentityassignedprofile/add/)
     - usually you want a private or public profile as for spec
     - after creation you review the profiles
-    - copy trust_marks from here to `trust_marks.json` in this direcotry
+    - copy trust_marks from here as an array to `trust_marks.json` in this direcotry
 
 - restart relying party (the one running on port 3000)
 

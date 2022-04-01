@@ -1,5 +1,5 @@
 import * as jose from "jose";
-import { inferAlgForJWK, isValidURL, LogLevel } from "./utils";
+import { inferAlgForJWK, isValidURL } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
 import { UserInfo } from "./UserInfoRequest";
 import { AbstractLogging } from "./Logger";

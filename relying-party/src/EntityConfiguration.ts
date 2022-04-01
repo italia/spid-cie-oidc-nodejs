@@ -82,7 +82,7 @@ type Translatable<Key extends string, Type = string> = {
  * campi in aggiunta.
  *
  * https://docs.italia.it/AgID/documenti-in-consultazione/lg-openidconnect-spid-docs/it/bozza/metadata/openid-provider-op-metadata.html
- * 
+ *
  * https://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata
  */
 export type OpenIDProviderMetadata = Translatable<"op_name" | "op_uri" | "op_url"> & {

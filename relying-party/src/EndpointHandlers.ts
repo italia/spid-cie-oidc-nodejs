@@ -7,9 +7,9 @@ import { dataSource } from "./persistance/data-source";
 import { AccessTokenResponseEntity } from "./persistance/entity/AccessTokenResponseEntity";
 import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { RevocationRequest } from "./RevocationRequest";
-import { CachedTrustChain } from "./TrustChain";
-import { UserInfo, UserInfoRequest } from "./UserInfoRequest";
-import { BadRequestError, isString, isUndefined } from "./utils";
+import { getTrustChain } from "./TrustChain";
+import { UserInfoRequest } from "./UserInfoRequest";
+import { isString, isUndefined } from "./utils";
 
 type ProviderInfo = {
   sub: string;
@@ -33,7 +33,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
     /**
      * Runs the validation of the configuration.
      */
-    async validate() {
+    async validateConfiguration() {
       await setupConfiguration();
     },
 
@@ -43,21 +43,21 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
       try {
         const trust_chains = await Promise.all(
           configuration.identity_providers.map((identity_providers_id) =>
-            CachedTrustChain(
-              configuration,
-              configuration.client_id,
-              identity_providers_id,
-              configuration.trust_anchors[0] // TODO
-            )
+            getTrustChain(configuration, identity_providers_id)
           )
         );
-
         return {
-          spid: trust_chains.filter(Boolean).map((tc) => ({
-            sub: tc.entity_configuration.sub,
-            organization_name: tc.entity_configuration.metadata?.openid_provider?.organization_name,
-            logo_uri: tc.entity_configuration.metadata?.openid_provider?.logo_uri,
-          })),
+          spid: trust_chains.flatMap((trustChain) => {
+            if (!trustChain) {
+              return [];
+            } else {
+              return {
+                sub: trustChain.entity_configuration.sub,
+                organization_name: trustChain.entity_configuration.metadata?.openid_provider?.organization_name,
+                logo_uri: trustChain.entity_configuration.metadata?.openid_provider?.logo_uri,
+              };
+            }
+          }),
         };
       } catch (error) {
         configuration.logger.error(error);
@@ -65,7 +65,7 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
       }
     },
 
-    async entityConfiguration(): Promise<AgnosticResponse> {
+    async createEntityConfigurationResponse() {
       const configuration = await setupConfiguration();
 
       try {
@@ -75,113 +75,67 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
           headers: { "Content-Type": "application/entity-statement+jwt" },
           body: jws,
         };
-
-        configuration.logger.info({ response });
         return response;
       } catch (error) {
         configuration.logger.error(error);
-        return { status: 500 };
+        throw error;
       }
     },
 
-    async authorization(
-      request: AgnosticRequest<{
-        provider: string;
-        scope?: string;
-        redirect_uri?: string;
-        acr_values?: string;
-        prompt?: string;
-      }>
-    ): Promise<AgnosticResponse> {
+    async createAuthorizationRedirectURL(provider: string) {
       const configuration = await setupConfiguration();
 
-      configuration.logger.info({ request });
-
       try {
-        const { provider, scope, redirect_uri, acr_values, prompt } = request.query;
-
         if (!isString(provider)) {
-          throw new BadRequestError("provider is mandatory parameter");
+          throw new Error("provider is mandatory parameter");
         }
-
-        if (!(isString(scope) || isUndefined(scope))) {
-          throw new BadRequestError("scope is optional string parameter");
-        }
-
-        if (!(isString(redirect_uri) || isUndefined(redirect_uri))) {
-          throw new BadRequestError("redirect_uri is optional string parameter");
-        }
-
-        if (!(isString(acr_values) || isUndefined(acr_values))) {
-          throw new BadRequestError("acr_values is optional string parameter");
-        }
-
-        if (!(isString(prompt) || isUndefined(prompt))) {
-          throw new BadRequestError("prompt is optional string parameter");
-        }
-
-        const redirectUrl = await AuthenticationRequest(configuration, {
+        const authenticationRedirectUrl = await AuthenticationRequest(configuration, {
           provider,
-          scope,
-          redirect_uri,
-          acr_values,
-          prompt,
         });
-
-        const response = { status: 302, headers: { Location: redirectUrl } };
-
-        configuration.logger.info({ response });
-
-        return response;
+        configuration.logger.info({ authenticationRedirectUrl });
+        return authenticationRedirectUrl;
       } catch (error) {
-        if (error instanceof BadRequestError) {
-          configuration.logger.info({ error });
-
-          return { status: 400, body: error.message };
-        } else {
-          configuration.logger.error(error);
-          return { status: 500 };
-        }
+        configuration.logger.error(error);
+        throw error;
       }
     },
 
-    async callback(
-      request: AgnosticRequest<{ code: string; state: string } | { error: string; error_description?: string }>
-    ): Promise<AgnosticResponse> {
+    async manageCallback(query: { code: string; state: string } | { error: string; error_description?: string }) {
       const configuration = await setupConfiguration();
 
-      configuration.logger.info({ request });
-
+      configuration.logger.info({ callback: { query } });
       try {
-        if ("error" in request.query) {
-          if (!isString(request.query.error)) {
-            throw new BadRequestError("error is mandatory string parameter");
+        if ("error" in query) {
+          if (!isString(query.error)) {
+            throw new Error("error is mandatory string parameter");
           }
-          if (!(isString(request.query.error_description) || isUndefined(request.query.error_description))) {
-            throw new BadRequestError("error_description is optional string parameter");
+          if (!(isString(query.error_description) || isUndefined(query.error_description))) {
+            throw new Error("error_description is optional string parameter");
           }
-          const error = request.query.error;
-          const error_description = request.query.error_description;
-          const response = {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ error, error_description }),
+          configuration.logger.info({
+            type: "authentication-error",
+            error: query.error,
+            error_description: query.error_description,
+          });
+          return {
+            type: "authentication-error" as const,
+            error: query.error,
+            error_description: query.error_description,
           };
-          configuration.logger.info({ response });
-          return response;
-        } else if ("code" in request.query) {
-          if (!isString(request.query.code)) {
-            throw new BadRequestError("code is mandatory string parameter");
+        } else if ("code" in query) {
+          if (!isString(query.code)) {
+            throw new Error("code is mandatory string parameter");
           }
-          if (!isString(request.query.state)) {
-            throw new BadRequestError("state is mandatory string parameter");
+          if (!isString(query.state)) {
+            throw new Error("state is mandatory string parameter");
           }
-          const state = request.query.state;
-          const code = request.query.code;
+          const { state, code } = query;
           const authentication_request = await dataSource.manager.findOne(AuthenticationRequestEntity, {
             where: { state },
           });
-          if (!authentication_request) throw new Error(`authentication request not found for state ${state}`);
+          if (!authentication_request) {
+            throw new Error(`authentication request not found for state ${state}`);
+          }
           const { id_token, access_token } = await AccessTokenRequest(configuration, authentication_request, { code });
           const user_info = await UserInfoRequest(configuration, authentication_request, access_token);
           const user_identifier = configuration.deriveUserIdentifier(user_info);
@@ -194,58 +148,27 @@ export function EndpointHandlers(configurationFacade: ConfigurationFacadeOptions
               revoked: false,
             })
           );
-          return {
-            status: 200,
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(user_info),
-          };
+          return { type: "authentication-success" as const, user_info, user_identifier };
         } else {
-          throw new BadRequestError(JSON.stringify(request.query, null, 2));
+          throw new Error(`callback type not supported ${JSON.stringify(query)}`);
         }
       } catch (error) {
-        if (error instanceof BadRequestError) {
-          configuration.logger.warn({ error });
-          return { status: 400, body: error.message };
-        } else {
-          configuration.logger.error(error);
-          return { status: 500 };
-        }
+        configuration.logger.error(error);
+        throw error;
       }
     },
 
-    async revocation(request: AgnosticRequest<{ user_info: UserInfo }>): Promise<AgnosticResponse> {
+    async revokeAccessTokensByUserIdentifier(user_identifier: string) {
       const configuration = await setupConfiguration();
 
-      configuration.logger.info({ request });
+      configuration.logger.info({ type: "revocation", user_identifier });
       try {
-        if (!request.query.user_info) {
-          throw new BadRequestError("user_info is mandatory parameter");
-        }
-        await RevocationRequest(configuration, request.query.user_info);
-        const response = { status: 200 };
-        configuration.logger.info({ response });
-        return response;
+        const revokeTokensCount = await RevocationRequest(configuration, user_identifier);
+        return revokeTokensCount;
       } catch (error) {
-        if (error instanceof BadRequestError) {
-          configuration.logger.warn({ error });
-          return { status: 400, body: error.message };
-        } else {
-          configuration.logger.error(error);
-          return { status: 500 };
-        }
+        configuration.logger.error(error);
+        throw error;
       }
     },
   };
 }
-
-export type AgnosticRequest<Query> = {
-  url: string;
-  headers: Record<string, string>;
-  query: Query;
-};
-
-export type AgnosticResponse = {
-  status: number;
-  headers?: Record<string, string>;
-  body?: string;
-};
