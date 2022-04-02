@@ -50,6 +50,8 @@ This software is released under the Apache 2 License by:
 
 - Frederik Batuna <frederik.batuna@smc.it>
 
+## Notes
+
 ### Npm package publishing
 
 A [github action](https://github.com/features/actions) is configured [here](.github\workflows\npm-publish.yml) to publish the package automatically.

@@ -1,13 +1,13 @@
-import { request } from "undici";
 import * as jose from "jose";
-import { inferAlgForJWK, makeIat } from "./utils";
+import { ajv, httpRequest, inferAlgForJWK, makeIat } from "./utils";
 import {
   TrustAnchorEntityConfiguration,
   IdentityProviderEntityConfiguration,
   RelyingPartyEntityConfiguration,
 } from "./createEntityConfiguration";
 import { cloneDeep, difference, intersection } from "lodash";
-import { Configuration } from "./configuration";
+import { Configuration, JWKs, TrustMark } from "./configuration";
+import { JSONSchemaType, ValidateFunction } from "ajv";
 
 // SHOULDDO implement arbitray length tst chain validation
 // SHOULDDO check authority hints
@@ -17,13 +17,18 @@ async function getAndVerifyTrustChain(
   identity_provider: string,
   trust_anchor: string
 ) {
-  const relying_party_entity_configuration = await getEntityConfiguration<RelyingPartyEntityConfiguration>(
-    relying_party
+  const relying_party_entity_configuration = await getEntityConfiguration(
+    relying_party,
+    validateRelyingPartyEntityConfiguration
   );
-  const identity_provider_entity_configuration = await getEntityConfiguration<IdentityProviderEntityConfiguration>(
-    identity_provider
+  const identity_provider_entity_configuration = await getEntityConfiguration(
+    identity_provider,
+    validateIdentityProviderEntityConfiguration
   );
-  const trust_anchor_entity_configuration = await getEntityConfiguration<TrustAnchorEntityConfiguration>(trust_anchor);
+  const trust_anchor_entity_configuration = await getEntityConfiguration(
+    trust_anchor,
+    validateTrustAnchorEntityConfiguration
+  );
   const relying_party_entity_statement = await getEntityStatement(
     relying_party_entity_configuration,
     trust_anchor_entity_configuration
@@ -60,44 +65,63 @@ async function getEntityStatement(
   descendant: RelyingPartyEntityConfiguration | IdentityProviderEntityConfiguration,
   superior: TrustAnchorEntityConfiguration
 ): Promise<EntityStatement> {
-  const response = await request(
-    `${superior.metadata.federation_entity.federation_fetch_endpoint}?sub=${descendant.sub}`,
-    {
+  try {
+    const response = await httpRequest({
+      url: `${superior.metadata.federation_entity.federation_fetch_endpoint}?sub=${descendant.sub}`,
       method: "GET",
+    });
+    if (response.status !== 200) {
+      throw new Error(`Expected status 200 but got ${response.status}`);
     }
-  );
-  if (response.statusCode !== 200) {
-    throw new Error(); // TODO better error reporting
+    if (!response.headers["content-type"]?.startsWith("application/entity-statement+jwt")) {
+      throw new Error(
+        `Expected content-type application/entity-statement+jwt but got ${response.headers["content-type"]}`
+      );
+    }
+    const jws = await response.body;
+    const { payload } = await jose.compactVerify(jws, async (header) => {
+      if (!header.kid) throw new Error("missing kid in header");
+      const jwk = superior.jwks.keys.find((key: any) => key.kid === header.kid);
+      if (!jwk) throw new Error("no matching key with kid found");
+      return await jose.importJWK(jwk, inferAlgForJWK(jwk));
+    });
+    return JSON.parse(new TextDecoder().decode(payload));
+  } catch (error) {
+    throw new Error(
+      `Failed to get entity statement for ${descendant.sub} from ${superior.metadata.federation_entity.federation_fetch_endpoint} beacuse of ${error}`
+    );
   }
-  if (!response.headers["content-type"]?.startsWith("application/entity-statement+jwt")) {
-    throw new Error(); // TODO better error reporting
-  }
-  const jws = await response.body.text();
-  const { payload } = await jose.compactVerify(jws, async (header) => {
-    if (!header.kid) throw new Error("missing kid in header");
-    const jwk = superior.jwks.keys.find((key: any) => key.kid === header.kid);
-    if (!jwk) throw new Error("no matching key with kid found");
-    return await jose.importJWK(jwk, inferAlgForJWK(jwk));
-  });
-  // TODO validate
-  return JSON.parse(new TextDecoder().decode(payload));
 }
 
-// SHOULDDO memoize by expiration
-async function getEntityConfiguration<T>(url: string): Promise<T> {
-  // SHOULDDO when doing post request ensure timeout and ssl is respected
-  const response = await request(url + ".well-known/openid-federation", {
-    method: "GET",
-  });
-  if (response.statusCode !== 200) {
-    throw new Error(); // TODO better error reporting
+async function getEntityConfiguration<T>(url: string, validateFunction: ValidateFunction<T>): Promise<T> {
+  try {
+    // SHOULDDO when doing post request ensure timeout and ssl is respected
+    const response = await httpRequest({
+      url: url + ".well-known/openid-federation",
+      method: "GET",
+    });
+    const jws = await response.body;
+    if (response.status !== 200) {
+      throw new Error(`Expected status 200 but got ${response.status}`);
+    }
+    if (!response.headers["content-type"]?.startsWith("application/entity-statement+jwt")) {
+      throw new Error(
+        `Expected content-type application/entity-statement+jwt but got ${response.headers["content-type"]}`
+      );
+    }
+    const entity_configuration = await verifyEntityConfiguration(jws);
+    if (!validateFunction(entity_configuration)) {
+      console.log(validateFunction.errors, entity_configuration);
+      throw new Error(
+        `Malformed entity configuration ${JSON.stringify(entity_configuration)} ${JSON.stringify(
+          validateFunction.errors
+        )}`
+      );
+    }
+    return entity_configuration;
+  } catch (error) {
+    throw new Error(`Failed to get entity configuration for ${url} because of ${error}`);
   }
-  if (!response.headers["content-type"]?.startsWith("application/entity-statement+jwt")) {
-    throw new Error(); // TODO better error reporting
-  }
-  const jws = await response.body.text();
-  const entity_configuration = verifyEntityConfiguration(jws);
-  return entity_configuration;
 }
 
 type EntityStatement = {
@@ -161,7 +185,7 @@ function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
   return metadata;
 }
 
-export async function verifyEntityConfiguration(jws: string) {
+export async function verifyEntityConfiguration(jws: string): Promise<unknown> {
   const decoded: any = jose.decodeJwt(jws);
   const { payload } = await jose.compactVerify(jws, async (header) => {
     if (!header.kid) throw new Error("missing kid in header");
@@ -170,7 +194,6 @@ export async function verifyEntityConfiguration(jws: string) {
     return await jose.importJWK(jwk, inferAlgForJWK(jwk));
   });
   const entity_configuration = JSON.parse(new TextDecoder().decode(payload));
-  // TODO verify schema (verify that has trust_marks)
   return entity_configuration;
 }
 
@@ -209,3 +232,153 @@ export async function getTrustChain(configuration: Configuration, provider: stri
     ).find((trust_chain) => trust_chain !== null) ?? null;
   return identityProviderTrustChain;
 }
+
+const jwksSchema: JSONSchemaType<JWKs> = {
+  type: "object",
+  properties: {
+    keys: {
+      type: "array",
+      items: {
+        type: "object",
+      },
+    },
+  },
+  required: ["keys"],
+};
+
+const trustMarksSchema: JSONSchemaType<Array<TrustMark>> = {
+  type: "array",
+  items: {
+    type: "object",
+    properties: {
+      id: { type: "string" },
+      trust_mark: { type: "string" },
+    },
+    required: ["id", "trust_mark"],
+  },
+};
+
+const relyingPartyEntityConfigurationSchema: JSONSchemaType<RelyingPartyEntityConfiguration> = {
+  type: "object",
+  properties: {
+    iss: { type: "string" },
+    sub: { type: "string" },
+    iat: { type: "number" },
+    exp: { type: "number" },
+    jwks: jwksSchema,
+    trust_marks: { ...trustMarksSchema, nullable: true },
+    authority_hints: { type: "array", items: { type: "string" } },
+    metadata: {
+      type: "object",
+      properties: {
+        openid_relying_party: {
+          type: "object",
+          properties: {
+            client_name: { type: "string" },
+            client_id: { type: "string" },
+            application_type: { type: "string" },
+            contacts: { type: "array", items: { type: "string" }, nullable: true },
+            subject_type: { type: "string" },
+            jwks: jwksSchema,
+            grant_types: { type: "array", items: { type: "string" } },
+            response_types: { type: "array", items: { type: "string" } },
+            redirect_uris: { type: "array", items: { type: "string" } },
+            client_registration_types: { type: "array", items: { type: "string" } },
+          },
+          required: [
+            "client_name",
+            "client_id",
+            "application_type",
+            "subject_type",
+            "jwks",
+            "grant_types",
+            "response_types",
+            "redirect_uris",
+            "client_registration_types",
+          ],
+        },
+      },
+      required: ["openid_relying_party"],
+    },
+  },
+  required: ["iss", "sub", "iat", "exp", "jwks", "authority_hints", "metadata"],
+};
+const validateRelyingPartyEntityConfiguration = ajv.compile(relyingPartyEntityConfigurationSchema);
+
+const IdentityProviderEntityConfigurationSchema: JSONSchemaType<IdentityProviderEntityConfiguration> = {
+  type: "object",
+  properties: {
+    iss: { type: "string" },
+    sub: { type: "string" },
+    iat: { type: "number" },
+    exp: { type: "number" },
+    jwks: jwksSchema,
+    trust_marks: { ...trustMarksSchema, nullable: true },
+    authority_hints: { type: "array", items: { type: "string" } },
+    metadata: {
+      type: "object",
+      properties: {
+        openid_provider: {
+          type: "object",
+        } as any,
+      },
+      required: ["openid_provider"],
+    },
+  },
+  required: ["iss", "sub", "iat", "exp", "jwks", "authority_hints", "metadata"],
+};
+const validateIdentityProviderEntityConfiguration = ajv.compile(IdentityProviderEntityConfigurationSchema);
+
+const trustAnchorEntityConfigurationSchema: JSONSchemaType<TrustAnchorEntityConfiguration> = {
+  type: "object",
+  properties: {
+    iss: { type: "string" },
+    sub: { type: "string" },
+    iat: { type: "number" },
+    exp: { type: "number" },
+    jwks: jwksSchema,
+    metadata: {
+      type: "object",
+      properties: {
+        federation_entity: {
+          type: "object",
+          properties: {
+            name: { type: "string" },
+            homepage_uri: { type: "string" },
+            contacts: { type: "array", items: { type: "string" } },
+            federation_fetch_endpoint: { type: "string" },
+            federation_list_endpoint: { type: "string" },
+            federation_resolve_endpoint: { type: "string" },
+            federation_status_endpoint: { type: "string" },
+          },
+          required: [
+            "name",
+            "homepage_uri",
+            "federation_fetch_endpoint",
+            "federation_list_endpoint",
+            "federation_resolve_endpoint",
+            "federation_status_endpoint",
+          ],
+        },
+      },
+      required: ["federation_entity"],
+    },
+    trust_marks_issuers: {
+      type: "object",
+      additionalProperties: {
+        type: "array",
+        items: { type: "string" },
+      },
+      required: [],
+    },
+    constraints: {
+      type: "object",
+      properties: {
+        max_path_length: { type: "number" },
+      },
+      required: ["max_path_length"],
+    },
+  },
+  required: ["constraints", "exp", "iat", "iss", "jwks", "metadata", "sub", "trust_marks_issuers"],
+};
+const validateTrustAnchorEntityConfiguration = ajv.compile(trustAnchorEntityConfigurationSchema);

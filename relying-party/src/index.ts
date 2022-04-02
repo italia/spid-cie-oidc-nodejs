@@ -1,4 +1,4 @@
-export { Configuration } from "./configuration";
+export { Configuration, AcrValue } from "./configuration";
 export { createRelyingParty } from "./createRelyingParty";
 export { generateJWKS } from "./utils";
 export { UserInfo } from "./requestUserInfo";

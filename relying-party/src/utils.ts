@@ -3,6 +3,7 @@ import * as fs from "fs";
 import * as jose from "jose";
 import * as uuid from "uuid";
 import * as undici from "undici";
+import Ajv from "ajv";
 import { Configuration } from "./configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(payload: Payload, jwk: jose.JWK) {
@@ -93,13 +94,15 @@ export async function readJSON<T = any>(path: string) {
 }
 
 type HTTPRequest =
-  | { method: "GET"; url: string; headers: Record<string, string> }
-  | { method: "POST"; url: string; headers: Record<string, string>; body: string };
+  | { method: "GET"; url: string; headers?: Record<string, string> }
+  | { method: "POST"; url: string; headers?: Record<string, string>; body: string };
 export async function httpRequest({ url, ...params }: HTTPRequest) {
   const response = await undici.request(url, params);
   return {
     status: response.statusCode,
-    header: response.headers,
+    headers: response.headers,
     body: await response.body.text(),
   };
 }
+
+export const ajv = new Ajv();

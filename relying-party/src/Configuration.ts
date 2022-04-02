@@ -2,6 +2,7 @@ import * as jose from "jose";
 import { inferAlgForJWK, isValidURL, readJSON } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
 import { consoleLogger } from "./default-implementations/consoleLogger";
+import { UserInfoCIE, UserInfoSPID } from "./requestUserInfo";
 
 /**
  * This configuration must be done on the relying party side
@@ -44,6 +45,15 @@ export type Configuration = {
    */
   identity_providers: Record<IdentityProviderProfile, Array<string>>;
 
+  /**
+   * list of urls where the user browser will be redirected
+   *
+   * At least one redirect uri is required.
+   *
+   * The first redirect uri will be used for callback enpoint in this implementation
+   *
+   * @example ["https://my.domain/callback"]
+   */
   redirect_uris: Array<string>;
 
   /**
@@ -72,15 +82,17 @@ export type Configuration = {
   scope: Array<"openid" | "offline_access">;
   token_endpoint_auth_method: Array<"private_key_jwt">;
 
-  providers: Record<
-    IdentityProviderProfile,
-    {
-      profile: {}; // TODO
-
+  providers: {
+    [P in IdentityProviderProfile]: {
+      /** what level of authentication is required */
+      acr_values: AcrValue;
       /** what information to request about user from provider */
-      requestedClaims: Record<string, Record<string, null | { essential: true }>>;
-    }
-  >;
+      requestedClaims: {
+        id_token: Partial<Record<IdentityProviderProfileClaims[P], { essential: true }>>;
+        userinfo: Partial<Record<IdentityProviderProfileClaims[P], null>>;
+      };
+    };
+  };
 
   /** jwt default expiration in seconds */
   federation_default_exp: number;
@@ -103,6 +115,19 @@ export type TrustMark = { id: string; trust_mark: string };
 export type JWKs = { keys: Array<jose.JWK> };
 
 type IdentityProviderProfile = "spid" | "cie";
+type IdentityProviderProfileClaims = {
+  spid: keyof UserInfoSPID;
+  cie: keyof UserInfoCIE;
+};
+
+/** level of authentication */
+export type AcrValue = typeof AcrValue[keyof typeof AcrValue];
+/** level of authentication */
+export const AcrValue = {
+  l1: "https://www.spid.gov.it/SpidL1",
+  l2: "https://www.spid.gov.it/SpidL2",
+  l3: "https://www.spid.gov.it/SpidL3",
+} as const;
 
 export type LogLevels = "fatal" | "error" | "warn" | "info" | "debug" | "trace";
 
@@ -212,12 +237,7 @@ export async function createConfigurationFromConfigurationFacade({
     token_endpoint_auth_method: ["private_key_jwt"],
     providers: {
       spid: {
-        profile: {
-          // "authorization_request": {"acr_values": AcrValuesSpid.l2.value}, // TODO
-          // "rp_metadata": RPMetadataSpid, // TODO
-          // "authn_response": AuthenticationResponse, // TODO
-          // "token_response": TokenResponse // TODO
-        },
+        acr_values: AcrValue.l2,
         requestedClaims: {
           id_token: {
             "https://attributes.spid.gov.it/familyName": { essential: true },
@@ -232,12 +252,7 @@ export async function createConfigurationFromConfigurationFacade({
         },
       },
       cie: {
-        profile: {
-          // "authorization_request": {"acr_values": AcrValuesCie.l2.value}, // TODO
-          // "rp_metadata": RPMetadataCie, // TODO
-          // "authn_response": AuthenticationResponseCie, // TODO
-          // "token_response": TokenResponse // TODO
-        },
+        acr_values: AcrValue.l2,
         requestedClaims: {
           id_token: {
             family_name: { essential: true },

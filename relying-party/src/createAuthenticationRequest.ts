@@ -28,7 +28,7 @@ export async function createAuthenticationRequest(configuration: Configuration, 
   )?.[0] as keyof Configuration["identity_providers"];
   const scope = "openid";
   const redirect_uri = configuration.redirect_uris[0];
-  const acr_values = "https://www.spid.gov.it/SpidL2"; // TODO get from configuration
+  const acr_values = configuration.providers[profile].acr_values;
   const prompt = "consent login";
   const endpoint = authorization_endpoint;
   const nonce = generateRandomString(32);

@@ -52,7 +52,7 @@ export type RelyingPartyEntityConfiguration = {
   iss: string;
   sub: string;
   jwks: { keys: Array<jose.JWK> };
-  trust_marks: Array<{ id: string; trust_mark: string }>;
+  trust_marks?: Array<{ id: string; trust_mark: string }>;
   authority_hints: Array<string>;
   metadata: {
     openid_relying_party: {
@@ -135,7 +135,7 @@ export type IdentityProviderEntityConfiguration = {
   iss: string;
   sub: string;
   jwks: { keys: Array<jose.JWK> };
-  trust_marks: Array<{ id: string; trust_mark: string }>;
+  trust_marks?: Array<{ id: string; trust_mark: string }>;
   authority_hints: Array<string>;
   metadata: {
     openid_provider: OpenIDProviderMetadata;
