@@ -1,10 +1,11 @@
-import { generateJWKS, noopLogger } from "../src";
+import { createInMemoryAsyncStorage, generateJWKS, noopLogger } from "../src";
+import { ConfigurationFacadeOptions } from "../src/configuration";
 import { createRelyingParty } from "../src/createRelyingParty";
 import { verifyEntityConfiguration } from "../src/getTrustChain";
 
 const machinery = (async () => {
   const { public_jwks, private_jwks } = await generateJWKS();
-  const configuration = {
+  const configuration : ConfigurationFacadeOptions = {
     client_id: `http://127.0.0.1:3000/oidc/rp/`,
     client_name: "My Application",
     trust_anchors: ["http://127.0.0.1:8000/"],
@@ -14,6 +15,7 @@ const machinery = (async () => {
     },
     logger: noopLogger,
     auditLogger: () => {},
+    storage: createInMemoryAsyncStorage(),
     public_jwks,
     private_jwks,
   };
@@ -28,7 +30,7 @@ describe("test whole flow happy path", () => {
     const { createEntityConfigurationResponse } = handlers;
     const response = await createEntityConfigurationResponse();
     expect(response.status).toBe(200);
-    const entity_configuration = await verifyEntityConfiguration(response.body);
+    const entity_configuration = await verifyEntityConfiguration(response.body) as any;
     expect(withoutFields(entity_configuration, ["iat", "exp"])).toEqual({
       iss: "http://127.0.0.1:3000/oidc/rp/",
       sub: "http://127.0.0.1:3000/oidc/rp/",
