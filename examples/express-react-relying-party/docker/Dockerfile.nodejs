@@ -7,7 +7,7 @@ EXPOSE 3000
 
 COPY . .
 
-RUN cd backend && yarn add spid-cie-oidc@0.0.2
+RUN cd backend && yarn add spid-cie-oidc@0.0.3
 
 RUN yarn build
 

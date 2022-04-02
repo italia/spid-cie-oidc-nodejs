@@ -111,7 +111,6 @@ async function getEntityConfiguration<T>(url: string, validateFunction: Validate
     }
     const entity_configuration = await verifyEntityConfiguration(jws);
     if (!validateFunction(entity_configuration)) {
-      console.log(validateFunction.errors, entity_configuration);
       throw new Error(
         `Malformed entity configuration ${JSON.stringify(entity_configuration)} ${JSON.stringify(
           validateFunction.errors
@@ -266,7 +265,7 @@ const relyingPartyEntityConfigurationSchema: JSONSchemaType<RelyingPartyEntityCo
     iat: { type: "number" },
     exp: { type: "number" },
     jwks: jwksSchema,
-    trust_marks: { ...trustMarksSchema, nullable: true },
+    trust_marks: { type: "array" } as any,
     authority_hints: { type: "array", items: { type: "string" } },
     metadata: {
       type: "object",
@@ -313,7 +312,7 @@ const IdentityProviderEntityConfigurationSchema: JSONSchemaType<IdentityProvider
     iat: { type: "number" },
     exp: { type: "number" },
     jwks: jwksSchema,
-    trust_marks: { ...trustMarksSchema, nullable: true },
+    trust_marks: { type: "array" } as any,
     authority_hints: { type: "array", items: { type: "string" } },
     metadata: {
       type: "object",
