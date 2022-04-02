@@ -9,6 +9,7 @@
     "lib",
     "package.json"
   ],
+  "kewords": ["spid", "cie", "oidc", "relying-party"],
   "repository": "https://github.com/italia/spid-cie-oidc-nodejs",
   "author": "Frederik Batuna <frederik.batuna@smc.it>",
   "license": "Apache-2.0",

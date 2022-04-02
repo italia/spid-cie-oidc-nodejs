@@ -1,0 +1,26 @@
+name: Docker Images (Relaying Party - Express React)
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  identity-provider:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build . --file docker/Dockerfile.django --tag ghcr.io/${{ github.repository_owner }}/federation-django:${{ github.event.release.tag_name }}
+      working-directory: examples/express-react-relying-party
+    - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+    - run: docker push ghcr.io/${{ github.repository_owner }}/federation-django:${{ github.event.release.tag_name }}
+  relying-party:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: docker build . --file docker/Dockerfile.nodejs --tag ghcr.io/${{ github.repository_owner }}/relying-party-express-react:${{ github.event.release.tag_name }}
+      working-directory: examples/express-react-relying-party
+    - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
+    - run: docker push ghcr.io/${{ github.repository_owner }}/relying-party-express-react:${{ github.event.release.tag_name }}
+
+
+      
