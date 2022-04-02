@@ -1,130 +1,148 @@
-import express, { Request, Response } from "express";
+import express from "express";
 import path from "path";
 import session from "express-session";
 import {
-  ConfigurationFacade,
-  AgnosticRequest,
-  AgnosticResponse,
-  EndpointHandlers,
+  createRelyingParty,
+  UserInfo,
+  Tokens,
+  createLogRotatingFilesystem,
+  createAuditLogRotatingFilesystem,
+  createInMemoryAsyncStorage,
 } from "spid-cie-oidc";
 
-main();
-async function main() {
-  const PORT = 3000;
+const port = process.env.PORT ?? 3000;
+const client_id = process.env.CLIENT_ID ?? `http://127.0.0.1:${port}/oidc/rp/`;
+const trust_anchors = process.env.TRUST_ANCHOR
+  ? [process.env.TRUST_ANCHOR]
+  : ["http://127.0.0.1:8000/"];
+const identity_providers = process.env.IDENTITY_PROVIDER
+  ? [process.env.IDENTITY_PROVIDER]
+  : ["http://127.0.0.1:8000/oidc/op/"];
 
-  const configuration = await ConfigurationFacade({
-    client_id: `http://127.0.0.1:${PORT}/oidc/rp/`,
-    client_name: "My Application",
-    contacts: ["me@mail.com"],
-    trust_anchors: ["http://127.0.0.1:8000/"],
-    identity_providers: ["http://127.0.0.1:8000/oidc/op/"],
-  });
+const {
+  validateConfiguration,
+  retrieveAvailableProviders,
+  createEntityConfigurationResponse,
+  createAuthorizationRedirectURL,
+  manageCallback,
+  revokeTokens,
+} = createRelyingParty({
+  client_id,
+  client_name: "My Application",
+  trust_anchors,
+  identity_providers: {
+    spid: identity_providers,
+    cie: ["http://127.0.0.1:8002/oidc/op/"],
+  },
+  public_jwks_path: "./public.jwks.json",
+  private_jwks_path: "./private.jwks.json",
+  trust_marks_path: "./trust_marks.json",
+  logger: createLogRotatingFilesystem(),
+  auditLogger: createAuditLogRotatingFilesystem(),
+  storage: createInMemoryAsyncStorage(),
+});
 
-  const {
-    providerList,
-    entityConfiguration,
-    authorization,
-    callback,
-    revocation,
-  } = await EndpointHandlers(configuration);
+validateConfiguration().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
 
-  function adaptRequest(req: Request): AgnosticRequest<any> {
-    return {
-      url: `${req.protocol}://${req.get("host")}${req.originalUrl}`,
-      headers: req.headers as Record<string, string>,
-      query: req.query,
-    };
-  }
+const app = express();
 
-  function adaptReponse(response: AgnosticResponse, res: Response) {
-    res.status(response.status);
-    if (response.headers) {
-      for (const [headerName, headerValue] of Object.entries(
-        response.headers
-      )) {
-        res.set(headerName, headerValue);
-      }
-    }
-    res.send(response.body);
-  }
-
-  const app = express();
-
-  // TODO use encrypted cookie instead
-  app.use(session({ secret: "spid-cie-oidc-nodejs" }));
-
-  app.get("/oidc/rp/providers", async (req, res) => {
-    const request = adaptRequest(req);
-    const response = await providerList(request);
-    adaptReponse(response, res);
-  });
-
-  app.get("/oidc/rp/authorization", async (req, res) => {
-    const request = adaptRequest(req);
-    const response = await authorization(request);
-    adaptReponse(response, res);
-  });
-
-  app.get("/oidc/rp/callback", async (req, res) => {
-    const request = adaptRequest(req);
-    const response = await callback(request);
-    if (response.status === 200 && response.body) {
-      req.session.user_info = JSON.parse(response.body);
-      res.redirect(`/attributes`);
-    } else if (response.status === 400 && response.body) {
-      const { error, error_description } = JSON.parse(response.body);
-      res.redirect(
-        `/error?${new URLSearchParams({ error, error_description })}`
-      );
-    } else {
-      adaptReponse(response, res);
-    }
-  });
-
-  app.get("/oidc/rp/revocation", async (req, res) => {
-    if (!req.session.user_info) throw new Error(); // TODO externalize session retreival
-    const request = adaptRequest(req);
-    request.query.user_info = req.session.user_info;
-    const response = await revocation(request);
-    req.session.destroy((error) => {
-      if (error) throw new Error(); // TODO decide what to do with the error
-    });
-    adaptReponse(response, res);
-  });
-
-  app.get("/oidc/rp/.well-known/openid-federation", async (req, res) => {
-    const request = adaptRequest(req);
-    const response = await entityConfiguration(request);
-    adaptReponse(response, res);
-  });
-
-  // this endpoint is outside of the oidc lib
-  // so you can provide your own way of storing and retreiving user data
-  app.get("/oidc/rp/user_info", (req, res) => {
-    if (req.session.user_info) {
-      res.json(req.session.user_info);
-    } else {
-      res.status(401).send("User is not legged in");
-    }
-  });
-
-  // serve frontend static files
-  app.use(express.static("frontend/build"));
-  // every route leads back to index beacuse it is a single page application
-  app.get("*", (req, res) =>
-    res.sendFile(path.resolve("frontend/build/index.html"))
-  );
-
-  app.listen(PORT, () => {
-    console.log(`Open browser at http://127.0.0.1:${PORT}`);
-  });
-}
-
+app.use(session({ secret: "spid-cie-oidc-nodejs" }));
 declare module "express-session" {
   interface SessionData {
-    user_info?: unknown;
+    user_info?: UserInfo;
+    tokens?: Tokens;
   }
 }
 
-// TODO session (create, destroy, update) default implementation ecrypted cookie
-// TODO authorizationRequest access token storage default implementation in memory?
+app.get("/oidc/rp/providers", async (req, res) => {
+  try {
+    res.json(await retrieveAvailableProviders());
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.get("/oidc/rp/authorization", async (req, res) => {
+  try {
+    res.redirect(
+      await createAuthorizationRedirectURL(req.query.provider as string)
+    );
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.get("/oidc/rp/callback", async (req, res) => {
+  try {
+    const outcome = await manageCallback(req.query as any);
+    switch (outcome.type) {
+      case "authentication-success": {
+        req.session.user_info = outcome.user_info;
+        req.session.tokens = outcome.tokens;
+        res.redirect(`/attributes`);
+        break;
+      }
+      case "authentication-error": {
+        res.redirect(
+          `/error?${new URLSearchParams({
+            error: outcome.error,
+            error_description: outcome.error_description ?? "",
+          })}`
+        );
+        break;
+      }
+    }
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.get("/oidc/rp/revocation", async (req, res) => {
+  try {
+    if (!req.session.tokens) {
+      res.status(400).json({ error: "user is not logged in" });
+    } else {
+      await revokeTokens(req.session.tokens);
+      req.session.destroy(() => {
+        res.json({ message: "user logged out" });
+      });
+    }
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+app.get("/oidc/rp/.well-known/openid-federation", async (req, res) => {
+  try {
+    const response = await createEntityConfigurationResponse();
+    res.status(response.status);
+    res.set("Content-Type", response.headers["Content-Type"]);
+    res.send(response.body);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
+// this endpoint is outside of the oidc lib
+// so you can provide your own way of storing and retreiving user data
+app.get("/oidc/rp/user_info", (req, res) => {
+  if (req.session.user_info) {
+    res.json(req.session.user_info);
+  } else {
+    res.status(401).send("User is not legged in");
+  }
+});
+
+// serve frontend static files
+app.use(express.static("frontend/build"));
+// every route leads back to index beacuse it is a single page application
+app.get("*", (req, res) =>
+  res.sendFile(path.resolve("frontend/build/index.html"))
+);
+
+app.listen(port, () => {
+  console.log(`Open browser at http://127.0.0.1:${port}`);
+});

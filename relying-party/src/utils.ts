@@ -2,7 +2,9 @@ import crypto from "crypto";
 import * as fs from "fs";
 import * as jose from "jose";
 import * as uuid from "uuid";
-import { Configuration } from "./Configuration";
+import * as undici from "undici";
+import Ajv from "ajv";
+import { Configuration } from "./configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(payload: Payload, jwk: jose.JWK) {
   const privateKey = await jose.importJWK(jwk, inferAlgForJWK(jwk));
@@ -87,6 +89,20 @@ export async function fileExists(path: string) {
   }
 }
 
-export type LogLevel = "error" | "warn" | "log" | "info" | "debug";
+export async function readJSON<T = any>(path: string) {
+  return JSON.parse(await fs.promises.readFile(path, "utf8")) as T;
+}
 
-export class BadRequestError extends Error {}
+type HTTPRequest =
+  | { method: "GET"; url: string; headers?: Record<string, string> }
+  | { method: "POST"; url: string; headers?: Record<string, string>; body: string };
+export async function httpRequest({ url, ...params }: HTTPRequest) {
+  const response = await undici.request(url, params);
+  return {
+    status: response.statusCode,
+    headers: response.headers,
+    body: await response.body.text(),
+  };
+}
+
+export const ajv = new Ajv();
