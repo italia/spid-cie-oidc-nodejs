@@ -1,17 +1,17 @@
 import * as jose from "jose";
 import { Configuration } from "./configuration";
-import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { ajv, httpRequest, inferAlgForJWK } from "./utils";
 import { JSONSchemaType } from "ajv";
+import { AuthenticationRequest } from "./createAuthenticationRequest";
 
 export async function requestUserInfo(
   configuration: Configuration,
-  authenticationRequestEntity: AuthenticationRequestEntity,
+  authenticationRequest: AuthenticationRequest,
   access_token: string
 ) {
   const request = {
     method: "GET" as const,
-    url: authenticationRequestEntity.userinfo_endpoint,
+    url: authenticationRequest.userinfo_endpoint,
     headers: { Authorization: `Bearer ${access_token}` },
   };
   configuration.logger.info({ message: "User info request", request });
@@ -20,7 +20,7 @@ export async function requestUserInfo(
   if (response.status === 200) {
     const jwe = await response.body;
     const jws = await decrypt(configuration, jwe);
-    const jwt = await verify(authenticationRequestEntity, jws);
+    const jwt = await verify(authenticationRequest, jws);
     configuration.logger.info({ message: "User info request succeeded", request, response });
     if (!(validateUserInfoCie(jwt) || validateUserInfoSpid(jwt))) {
       throw new Error("invalid user info response");
@@ -42,11 +42,11 @@ async function decrypt(configuration: Configuration, jwe: string) {
   return new TextDecoder().decode(plaintext);
 }
 
-async function verify(authenticationRequestEntity: AuthenticationRequestEntity, jws: string) {
+async function verify(authenticationRequest: AuthenticationRequest, jws: string) {
   try {
     const { payload } = await jose.compactVerify(jws, async (header) => {
       if (!header.kid) throw new Error("missing kid in header");
-      const jwk = authenticationRequestEntity.provider_jwks.keys.find((key) => key.kid === header.kid);
+      const jwk = authenticationRequest.provider_jwks.keys.find((key) => key.kid === header.kid);
       if (!jwk) throw new Error("no matching key with kid found");
       return await jose.importJWK(jwk, inferAlgForJWK(jwk));
     });

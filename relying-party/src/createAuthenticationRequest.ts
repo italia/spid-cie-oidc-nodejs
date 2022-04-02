@@ -1,8 +1,6 @@
 import crypto from "crypto";
 import { createJWS, generateRandomString, getPrivateJWKforProvider, isValidURL, makeIat } from "./utils";
-import { Configuration } from "./configuration";
-import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
-import { dataSource } from "./persistance/data-source";
+import { Configuration, JWKs } from "./configuration";
 import { getTrustChain } from "./getTrustChain";
 
 export async function createAuthenticationRequest(configuration: Configuration, provider: string) {
@@ -80,17 +78,15 @@ export async function createAuthenticationRequest(configuration: Configuration, 
     prompt,
     request,
   })}`;
-  await dataSource.manager.save(
-    dataSource.getRepository(AuthenticationRequestEntity).create({
-      state,
-      code_verifier,
-      redirect_uri,
-      token_endpoint,
-      userinfo_endpoint,
-      revocation_endpoint,
-      provider_jwks,
-    })
-  );
+  await configuration.storage.write(state, {
+    state,
+    code_verifier,
+    redirect_uri,
+    token_endpoint,
+    userinfo_endpoint,
+    revocation_endpoint,
+    provider_jwks,
+  });
   configuration.logger.info({ message: "Authentication request created", url });
   return url;
 }
@@ -107,3 +103,20 @@ function getPKCE() {
     code_challenge_method,
   };
 }
+
+export type AuthenticationRequest = {
+  /** authentication reqest unique identifier (generated radnomly by relying party) */
+  state: string;
+  /** generated randomly by relying party */
+  code_verifier: string;
+  /** got from relying party configuration */
+  redirect_uri: string;
+  /** got from provider configuration */
+  token_endpoint: string;
+  /** got from provider configuration */
+  userinfo_endpoint: string;
+  /** got from provider configuration */
+  revocation_endpoint: string;
+  /** got from provider configuration */
+  provider_jwks: JWKs;
+};

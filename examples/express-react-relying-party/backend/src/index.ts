@@ -7,6 +7,7 @@ import {
   Tokens,
   createLogRotatingFilesystem,
   createAuditLogRotatingFilesystem,
+  createInMemoryAsyncStorage,
 } from "spid-cie-oidc";
 
 const port = process.env.PORT ?? 3000;
@@ -17,9 +18,6 @@ const trust_anchors = process.env.TRUST_ANCHOR
 const identity_providers = process.env.IDENTITY_PROVIDER
   ? [process.env.IDENTITY_PROVIDER]
   : ["http://127.0.0.1:8000/oidc/op/"];
-
-const auditLogger = createAuditLogRotatingFilesystem();
-const logger = createLogRotatingFilesystem();
 
 const {
   validateConfiguration,
@@ -39,8 +37,9 @@ const {
   public_jwks_path: "./public.jwks.json",
   private_jwks_path: "./private.jwks.json",
   trust_marks_path: "./trust_marks.json",
-  logger,
-  auditLogger,
+  logger: createLogRotatingFilesystem(),
+  auditLogger: createAuditLogRotatingFilesystem(),
+  storage: createInMemoryAsyncStorage(),
 });
 
 validateConfiguration().catch((error) => {

@@ -15,18 +15,14 @@
   "private": false,
   "scripts": {
     "build": "rollup -c",
-    "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js",
     "format": "prettier --write src",
     "test": "jest",
     "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\""
   },
   "dependencies": {
-    "abstract-logging": "^2.0.1",
+    "ajv": "^8.11.0",
     "jose": "^4.6.0",
     "lodash": "^4.17.21",
-    "reflect-metadata": "^0.1.13",
-    "sqlite3": "^4.0.3",
-    "typeorm": "^0.3.0",
     "undici": "^4.16.0",
     "uuid": "^8.3.2",
     "winston": "^3.6.0",

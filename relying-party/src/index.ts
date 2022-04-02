@@ -1,4 +1,4 @@
-export { Configuration, AcrValue } from "./configuration";
+export { Configuration, AcrValue, AsyncStorage } from "./configuration";
 export { createRelyingParty } from "./createRelyingParty";
 export { generateJWKS } from "./utils";
 export { UserInfo } from "./requestUserInfo";
@@ -7,5 +7,6 @@ export { loadOrCreateJWKSFromFilesystem } from "./default-implementations/loadOr
 export { loadTrustMarksFromFilesystem } from "./default-implementations/loadTrustMarksFromFilesystem";
 export { createLogRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";
 export { createAuditLogRotatingFilesystem } from "./default-implementations/auditLogRotatingFilesystem";
+export { createInMemoryAsyncStorage } from "./default-implementations/inMemoryAsyncStorage";
 export { noopLogger } from "./default-implementations/noopLogger";
 export { consoleLogger } from "./default-implementations/consoleLogger";

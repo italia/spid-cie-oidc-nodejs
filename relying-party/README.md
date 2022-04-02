@@ -21,6 +21,7 @@ import {
   createRelayingParty,
   createLogRotatingFilesystem,
   createAuditLogRotatingFilesystem,
+  createInMemoryAsyncStorage
 } from "spid-cie-oidc";
 
 // create functions that will manage authentication with bare minimum configuration
@@ -42,6 +43,10 @@ const {
   public_jwks_path: "./public.jwks.json",
   private_jwks_path: "./private.jwks.json",
   trust_marks_path: "./trust_marks.json",
+  // these implementations are suited a single instance server
+  // to support multi instance server (for example with load balancing)
+  // you must must provide your own implementations (for example with redis or mysql)
+  storage: createInMemoryAsyncStorage(),
   logger: createLogRotatingFilesystem(),
   auditLogger: createAuditLogRotatingFilesystem(),
 });

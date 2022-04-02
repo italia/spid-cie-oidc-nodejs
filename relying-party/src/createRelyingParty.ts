@@ -7,8 +7,6 @@ import {
   validateConfiguration,
 } from "./configuration";
 import { createEntityConfiguration } from "./createEntityConfiguration";
-import { dataSource } from "./persistance/data-source";
-import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { revokeAccessToken, Tokens } from "./revokeAccessToken";
 import { getTrustChain } from "./getTrustChain";
 import { requestUserInfo } from "./requestUserInfo";
@@ -120,9 +118,7 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
           if (!isString(query.state)) {
             throw new Error("state is mandatory string parameter");
           }
-          const authentication_request = await dataSource.manager.findOne(AuthenticationRequestEntity, {
-            where: { state: query.state },
-          });
+          const authentication_request = await configuration.storage.read(query.state);
           if (!authentication_request) {
             configuration.logger.warn({
               message: "Callback function called with code but corresponding authentication with not found",

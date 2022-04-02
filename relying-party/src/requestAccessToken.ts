@@ -1,32 +1,32 @@
 import { Configuration } from "./configuration";
 import { createJWS, getPrivateJWKforProvider, httpRequest, isString, makeExp, makeIat, makeJti } from "./utils";
-import { AuthenticationRequestEntity } from "./persistance/entity/AuthenticationRequestEntity";
 import { isUndefined } from "lodash";
+import { AuthenticationRequest } from "./createAuthenticationRequest";
 
 export async function requestAccessToken(
   configuration: Configuration,
-  authenticationRequestEntity: AuthenticationRequestEntity,
+  authenticationRequest: AuthenticationRequest,
   code: string
 ) {
   const request = {
-    url: authenticationRequestEntity.token_endpoint,
+    url: authenticationRequest.token_endpoint,
     method: "POST" as const,
     headers: {
       "content-type": "application/x-www-form-urlencoded",
     },
     body: new URLSearchParams({
       grant_type: "authorization_code",
-      redirect_uri: authenticationRequestEntity.redirect_uri,
+      redirect_uri: authenticationRequest.redirect_uri,
       client_id: configuration.client_id,
-      state: authenticationRequestEntity.state,
+      state: authenticationRequest.state,
       code,
-      code_verifier: authenticationRequestEntity.code_verifier,
+      code_verifier: authenticationRequest.code_verifier,
       client_assertion_type: "urn:ietf:params:oauth:client-assertion-type:jwt-bearer",
       client_assertion: await createJWS(
         {
           iss: configuration.client_id,
           sub: configuration.client_id,
-          aud: [authenticationRequestEntity.token_endpoint],
+          aud: [authenticationRequest.token_endpoint],
           iat: makeIat(),
           exp: makeExp(),
           jti: makeJti(),

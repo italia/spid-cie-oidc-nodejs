@@ -3,6 +3,7 @@ import { inferAlgForJWK, isValidURL, readJSON } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
 import { consoleLogger } from "./default-implementations/consoleLogger";
 import { UserInfoCIE, UserInfoSPID } from "./requestUserInfo";
+import { AuthenticationRequest } from "./createAuthenticationRequest";
 
 /**
  * This configuration must be done on the relying party side
@@ -97,6 +98,9 @@ export type Configuration = {
   /** jwt default expiration in seconds */
   federation_default_exp: number;
 
+  /** supply a storage that will be used to store intermediate stateful data  */
+  storage: AsyncStorage<AuthenticationRequest>;
+
   /**
    * a function that will be called to log detailed events and exceptions
    * @see {@link logRotatingFilesystem} for an example
@@ -129,6 +133,12 @@ export const AcrValue = {
   l3: "https://www.spid.gov.it/SpidL3",
 } as const;
 
+export type AsyncStorage<T> = {
+  read(rowId: string): Promise<T>;
+  write(rowId: string, value: T): Promise<void>;
+  delete(rowId: string): Promise<void>;
+};
+
 export type LogLevels = "fatal" | "error" | "warn" | "info" | "debug" | "trace";
 
 export type AbstractLogging = {
@@ -141,7 +151,7 @@ function defaultAuditLogger(message: any) {
 
 type MandatoryConfiguration = Pick<
   Configuration,
-  "client_id" | "client_name" | "trust_anchors" | "identity_providers" | "logger" | "auditLogger"
+  "client_id" | "client_name" | "trust_anchors" | "identity_providers" | "logger" | "auditLogger" | "storage"
 >;
 
 type AdditionalConfiguration = {
