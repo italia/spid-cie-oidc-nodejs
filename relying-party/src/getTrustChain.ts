@@ -1,5 +1,5 @@
 import * as jose from "jose";
-import { ajv, httpRequest, inferAlgForJWK, makeIat } from "./utils";
+import { ajv, inferAlgForJWK, makeIat } from "./utils";
 import {
   TrustAnchorEntityConfiguration,
   IdentityProviderEntityConfiguration,
@@ -18,22 +18,27 @@ async function getAndVerifyTrustChain(
   trust_anchor: string
 ) {
   const relying_party_entity_configuration = await getEntityConfiguration(
+    configuration,
     relying_party,
     validateRelyingPartyEntityConfiguration
   );
   const identity_provider_entity_configuration = await getEntityConfiguration(
+    configuration,
     identity_provider,
     validateIdentityProviderEntityConfiguration
   );
   const trust_anchor_entity_configuration = await getEntityConfiguration(
+    configuration,
     trust_anchor,
     validateTrustAnchorEntityConfiguration
   );
   const relying_party_entity_statement = await getEntityStatement(
+    configuration,
     relying_party_entity_configuration,
     trust_anchor_entity_configuration
   );
   const identity_provider_entity_statement = await getEntityStatement(
+    configuration,
     identity_provider_entity_configuration,
     trust_anchor_entity_configuration
   );
@@ -62,11 +67,12 @@ async function getAndVerifyTrustChain(
 }
 
 async function getEntityStatement(
+  configuration: Configuration,
   descendant: RelyingPartyEntityConfiguration | IdentityProviderEntityConfiguration,
   superior: TrustAnchorEntityConfiguration
 ): Promise<EntityStatement> {
   try {
-    const response = await httpRequest({
+    const response = await configuration.httpClient({
       url: `${superior.metadata.federation_entity.federation_fetch_endpoint}?sub=${descendant.sub}`,
       method: "GET",
     });
@@ -93,10 +99,14 @@ async function getEntityStatement(
   }
 }
 
-async function getEntityConfiguration<T>(url: string, validateFunction: ValidateFunction<T>): Promise<T> {
+async function getEntityConfiguration<T>(
+  configuration: Configuration,
+  url: string,
+  validateFunction: ValidateFunction<T>
+): Promise<T> {
   try {
     // SHOULDDO when doing post request ensure timeout and ssl is respected
-    const response = await httpRequest({
+    const response = await configuration.httpClient({
       url: url + ".well-known/openid-federation",
       method: "GET",
     });

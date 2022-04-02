@@ -4,7 +4,7 @@ import * as jose from "jose";
 import * as uuid from "uuid";
 import * as undici from "undici";
 import Ajv from "ajv";
-import { Configuration } from "./configuration";
+import { Configuration, HttpClient } from "./configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(payload: Payload, jwk: jose.JWK) {
   const privateKey = await jose.importJWK(jwk, inferAlgForJWK(jwk));
@@ -93,16 +93,13 @@ export async function readJSON<T = any>(path: string) {
   return JSON.parse(await fs.promises.readFile(path, "utf8")) as T;
 }
 
-type HTTPRequest =
-  | { method: "GET"; url: string; headers?: Record<string, string> }
-  | { method: "POST"; url: string; headers?: Record<string, string>; body: string };
-export async function httpRequest({ url, ...params }: HTTPRequest) {
+export const undiciHttpClient: HttpClient = async ({ url, ...params }) => {
   const response = await undici.request(url, params);
   return {
     status: response.statusCode,
-    headers: response.headers,
+    headers: response.headers as Record<string, string>,
     body: await response.body.text(),
   };
-}
+};
 
 export const ajv = new Ajv();

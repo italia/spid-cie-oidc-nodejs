@@ -1,5 +1,5 @@
 import { Configuration } from "./configuration";
-import { createJWS, getPrivateJWKforProvider, httpRequest, isString, makeExp, makeIat, makeJti } from "./utils";
+import { createJWS, getPrivateJWKforProvider, isString, makeExp, makeIat, makeJti } from "./utils";
 import { isUndefined } from "lodash";
 import { AuthenticationRequest } from "./createAuthenticationRequest";
 
@@ -37,7 +37,7 @@ export async function requestAccessToken(
   };
   // SHOULDDO when doing post request ensure timeout and ssl is respected
   configuration.logger.info({ message: "Access token request", request });
-  const response = await httpRequest(request);
+  const response = await configuration.httpClient(request);
   if (response.status === 200) {
     configuration.logger.info({ message: "Access token request succeeded", request, response });
     const tokens = JSON.parse(response.body);

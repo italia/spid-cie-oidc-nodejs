@@ -1,5 +1,5 @@
 import * as jose from "jose";
-import { inferAlgForJWK, isValidURL, readJSON } from "./utils";
+import { inferAlgForJWK, isValidURL, readJSON, undiciHttpClient } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
 import { consoleLogger } from "./default-implementations/consoleLogger";
 import { UserInfoCIE, UserInfoSPID } from "./requestUserInfo";
@@ -112,6 +112,8 @@ export type Configuration = {
    * @see {@link auditLogRotatingFilesystem} for an example
    */
   auditLogger(message: object | unknown): void;
+
+  httpClient: HttpClient;
 };
 
 export type TrustMark = { id: string; trust_mark: string };
@@ -132,6 +134,12 @@ export const AcrValue = {
   l2: "https://www.spid.gov.it/SpidL2",
   l3: "https://www.spid.gov.it/SpidL3",
 } as const;
+
+type HttpRequest =
+  | { method: "GET"; url: string; headers?: Record<string, string> }
+  | { method: "POST"; url: string; headers?: Record<string, string>; body: string };
+type HttpResponse = { status: number; headers: Record<string, string>; body: string };
+export type HttpClient = (request: HttpRequest) => Promise<HttpResponse>;
 
 export type AsyncStorage<T> = {
   read(rowId: string): Promise<T>;
@@ -193,6 +201,7 @@ export async function createConfigurationFromConfigurationFacade({
   trust_marks_path,
   logger = consoleLogger,
   auditLogger = defaultAuditLogger,
+  httpClient = undiciHttpClient,
   ...rest
 }: ConfigurationFacadeOptions): Promise<Configuration> {
   if (public_jwks != null && public_jwks_path != null) {
@@ -283,6 +292,7 @@ export async function createConfigurationFromConfigurationFacade({
     redirect_uris: [client_id + "callback"],
     logger,
     auditLogger,
+    httpClient,
     ...rest,
   };
 }

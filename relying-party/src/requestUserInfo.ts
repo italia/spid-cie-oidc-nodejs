@@ -1,6 +1,6 @@
 import * as jose from "jose";
 import { Configuration } from "./configuration";
-import { ajv, httpRequest, inferAlgForJWK } from "./utils";
+import { ajv, inferAlgForJWK } from "./utils";
 import { JSONSchemaType } from "ajv";
 import { AuthenticationRequest } from "./createAuthenticationRequest";
 
@@ -16,7 +16,7 @@ export async function requestUserInfo(
   };
   configuration.logger.info({ message: "User info request", request });
   // SHOULDDO ensure timeout and ssl is respected
-  const response = await httpRequest(request);
+  const response = await configuration.httpClient(request);
   if (response.status === 200) {
     const jwe = await response.body;
     const jws = await decrypt(configuration, jwe);

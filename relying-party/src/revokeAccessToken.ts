@@ -1,5 +1,5 @@
 import { Configuration } from "./configuration";
-import { createJWS, getPrivateJWKforProvider, makeExp, makeIat, makeJti, httpRequest } from "./utils";
+import { createJWS, getPrivateJWKforProvider, makeExp, makeIat, makeJti } from "./utils";
 
 export type Tokens = Readonly<{
   id_token: string;
@@ -32,7 +32,7 @@ export async function revokeAccessToken(configuration: Configuration, tokens: To
   };
   configuration.logger.info({ message: `Revocation request`, request });
   // SHOULDDO when doing post request ensure timeout and ssl is respected
-  const response = await httpRequest(request);
+  const response = await configuration.httpClient(request);
   if (response.status === 200) {
     configuration.logger.info({ message: `Revocation request succeeded`, request, response });
   } else {
