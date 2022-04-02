@@ -10,9 +10,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - run: docker build . --file docker/Dockerfile.django --tag ghcr.io/${{ github.repository_owner }}/spid-cie-oidc-nodejs-examples-express-react-django-federation:${{ github.event.release.tag_name }}
-      working-directory: examples/express-react-django-federation-relying-party
+      working-directory: examples/express-react-relying-party
     - run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u $ --password-stdin
-    - run: docker push ghcr.io/${{ github.repository_owner }}/spid-cie-oidc-nodejs-examples-express-react:${{ github.event.release.tag_name }}
+    - run: docker push ghcr.io/${{ github.repository_owner }}/spid-cie-oidc-nodejs-examples-express-react-django-federation:${{ github.event.release.tag_name }}
   relying-party:
     runs-on: ubuntu-latest
     steps:
