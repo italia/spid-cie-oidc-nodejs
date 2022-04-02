@@ -1,6 +1,6 @@
 {
   "name": "spid-cie-oidc",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "openid federation relying party implementation",
   "main": "lib/index.js",
   "module": "lib/index.esm.js",
