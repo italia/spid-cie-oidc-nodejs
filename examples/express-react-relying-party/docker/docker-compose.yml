@@ -2,13 +2,13 @@ version: "3.5"
 
 services:
   trust-anchor.org:
-    image: ghcr.io/freddi301/federation-django:0.0.0
+    image: ghcr.io/italia/spid-cie-oidc-nodejs-examples-express-react-django-federation
     ports:
       - "8000:8000"
     networks:
       - oidc-network
   relying-party.org:
-    image: ghcr.io/freddi301/relying-party-express-react:0.0.0
+    image: ghcr.io/italia/spid-cie-oidc-nodejs-examples-express-react-relying-party
     ports:
       - "3000:3000"
     networks:
