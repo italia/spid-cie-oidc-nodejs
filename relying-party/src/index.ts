@@ -3,8 +3,6 @@ export { createRelyingParty } from "./createRelyingParty";
 export { generateJWKS } from "./utils";
 export { UserInfo } from "./requestUserInfo";
 export { Tokens } from "./revokeAccessToken";
-export { loadOrCreateJWKSFromFilesystem } from "./default-implementations/loadOrCreateJWKSFromFilesystem";
-export { loadTrustMarksFromFilesystem } from "./default-implementations/loadTrustMarksFromFilesystem";
 export { createLogRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";
 export { createAuditLogRotatingFilesystem } from "./default-implementations/auditLogRotatingFilesystem";
 export { createInMemoryAsyncStorage } from "./default-implementations/inMemoryAsyncStorage";

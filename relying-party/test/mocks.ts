@@ -386,7 +386,12 @@ const mockHttpClient: HttpClient = async (request) => {
   }
 };
 
-export const mockConfiguration: ConfigurationFacadeOptions = {
+const ensure =
+  <A>() =>
+  <B extends A>(value: B) =>
+    value;
+
+export const mockConfiguration = ensure<ConfigurationFacadeOptions>()({
   client_id: `http://127.0.0.1:3000/oidc/rp/`,
   client_name: "My Application",
   trust_anchors: ["http://127.0.0.1:8000/"],
@@ -400,4 +405,4 @@ export const mockConfiguration: ConfigurationFacadeOptions = {
   httpClient: mockHttpClient,
   public_jwks: mockRelyingPartyPublicJWKs,
   private_jwks: mockRelyingPartyPrivateJWKs,
-};
+});

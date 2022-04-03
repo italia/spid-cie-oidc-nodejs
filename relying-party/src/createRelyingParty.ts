@@ -90,7 +90,7 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
         if (!isString(provider)) {
           throw new Error("provider is mandatory parameter");
         }
-        return await await createAuthenticationRequest(configuration, provider);
+        return await createAuthenticationRequest(configuration, provider);
       } catch (error) {
         configuration.logger.error(error);
         throw error;

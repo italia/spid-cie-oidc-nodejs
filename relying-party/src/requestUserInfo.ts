@@ -1,6 +1,6 @@
 import * as jose from "jose";
 import { Configuration } from "./configuration";
-import { ajv, inferAlgForJWK } from "./utils";
+import { ajv, inferAlgForJWK, verifyJWS } from "./utils";
 import { JSONSchemaType } from "ajv";
 import { AuthenticationRequest } from "./createAuthenticationRequest";
 
@@ -44,13 +44,7 @@ async function decrypt(configuration: Configuration, jwe: string) {
 
 async function verify(authenticationRequest: AuthenticationRequest, jws: string) {
   try {
-    const { payload } = await jose.compactVerify(jws, async (header) => {
-      if (!header.kid) throw new Error("missing kid in header");
-      const jwk = authenticationRequest.provider_jwks.keys.find((key) => key.kid === header.kid);
-      if (!jwk) throw new Error("no matching key with kid found");
-      return await jose.importJWK(jwk, inferAlgForJWK(jwk));
-    });
-    return new TextDecoder().decode(payload);
+    return await verifyJWS(jws, authenticationRequest.provider_jwks);
   } catch (error) {
     if ((error as any).code === "ERR_JWS_SIGNATURE_VERIFICATION_FAILED") {
       // user info jwt verificatrion failed, this should not happen

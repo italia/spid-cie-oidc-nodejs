@@ -4,14 +4,24 @@ import * as jose from "jose";
 import * as uuid from "uuid";
 import * as undici from "undici";
 import Ajv from "ajv";
-import { Configuration, HttpClient } from "./configuration";
+import { Configuration, HttpClient, JWKs } from "./configuration";
 
 export async function createJWS<Payload extends jose.JWTPayload>(payload: Payload, jwk: jose.JWK) {
   const privateKey = await jose.importJWK(jwk, inferAlgForJWK(jwk));
-  const jws = new jose.CompactSign(new TextEncoder().encode(JSON.stringify(payload)))
+  const jws = await new jose.CompactSign(new TextEncoder().encode(JSON.stringify(payload)))
     .setProtectedHeader({ alg: "RS256", kid: jwk.kid })
     .sign(privateKey);
   return jws;
+}
+
+export async function verifyJWS(jws: string, public_jwks: JWKs) {
+  const { payload } = await jose.compactVerify(jws, async (header) => {
+    if (!header.kid) throw new Error("missing kid in header");
+    const jwk = public_jwks.keys.find((key: any) => key.kid === header.kid);
+    if (!jwk) throw new Error("no matching key with kid found");
+    return await jose.importJWK(jwk, inferAlgForJWK(jwk));
+  });
+  return JSON.parse(new TextDecoder().decode(payload));
 }
 
 // now timestamp in seconds

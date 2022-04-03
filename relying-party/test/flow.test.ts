@@ -1,7 +1,6 @@
-import { consoleLogger, createInMemoryAsyncStorage, generateJWKS, noopLogger } from "../src";
-import { ConfigurationFacadeOptions } from "../src/configuration";
 import { createRelyingParty } from "../src/createRelyingParty";
 import { verifyEntityConfiguration } from "../src/getTrustChain";
+import { verifyJWS } from "../src/utils";
 import { mockConfiguration } from "./mocks";
 
 const mockRelyingParty = createRelyingParty(mockConfiguration);
@@ -14,6 +13,7 @@ describe("test whole flow happy path", () => {
     const { createEntityConfigurationResponse } = await mockRelyingParty;
     const response = await createEntityConfigurationResponse();
     expect(response.status).toBe(200);
+    expect(response.headers["Content-Type"]).toBe("application/entity-statement+jwt");
     const entity_configuration = (await verifyEntityConfiguration(response.body)) as any;
     expect(withoutFields(entity_configuration, ["iat", "exp"])).toEqual({
       iss: "http://127.0.0.1:3000/oidc/rp/",
@@ -50,10 +50,56 @@ describe("test whole flow happy path", () => {
       cie: [],
     });
   });
-  let authenticationUrl: string;
   test("authorization redirect url happy path", async () => {
     const { createAuthorizationRedirectURL } = await mockRelyingParty;
-    authenticationUrl = await createAuthorizationRedirectURL("http://127.0.0.1:8000/oidc/op/");
+    const authenticationUrl = new URL(await createAuthorizationRedirectURL("http://127.0.0.1:8000/oidc/op/"));
+    expect(authenticationUrl.origin).toBe("http://127.0.0.1:8000");
+    expect(authenticationUrl.pathname).toBe("/oidc/op/authorization");
+    const searchParams = Object.fromEntries(authenticationUrl.searchParams.entries());
+    const { state, nonce, code_challenge, iat, request, ...deterministicSearchParams } = searchParams;
+    expect(deterministicSearchParams).toEqual({
+      scope: "openid",
+      redirect_uri: "http://127.0.0.1:3000/oidc/rp/callback",
+      response_type: "code",
+      client_id: "http://127.0.0.1:3000/oidc/rp/",
+      endpoint: "http://127.0.0.1:8000/oidc/op/authorization",
+      acr_values: "https://www.spid.gov.it/SpidL2",
+      aud: '["http://127.0.0.1:8000/oidc/op/","http://127.0.0.1:8000/oidc/op/authorization"]',
+      claims:
+        '{"id_token":{"https://attributes.spid.gov.it/familyName":{"essential":true},"https://attributes.spid.gov.it/email":{"essential":true}},"userinfo":{"https://attributes.spid.gov.it/name":null,"https://attributes.spid.gov.it/familyName":null,"https://attributes.spid.gov.it/email":null,"https://attributes.spid.gov.it/fiscalNumber":null}}',
+      code_challenge_method: "S256",
+      prompt: "consent login",
+    });
+    const requestContent = await verifyJWS(request, mockConfiguration.public_jwks);
+    expect(requestContent).toEqual({
+      scope: "openid",
+      redirect_uri: "http://127.0.0.1:3000/oidc/rp/callback",
+      response_type: "code",
+      nonce,
+      state,
+      client_id: "http://127.0.0.1:3000/oidc/rp/",
+      endpoint: "http://127.0.0.1:8000/oidc/op/authorization",
+      acr_values: "https://www.spid.gov.it/SpidL2",
+      iat: Number(iat),
+      aud: ["http://127.0.0.1:8000/oidc/op/", "http://127.0.0.1:8000/oidc/op/authorization"],
+      claims: {
+        id_token: {
+          "https://attributes.spid.gov.it/familyName": { essential: true },
+          "https://attributes.spid.gov.it/email": { essential: true },
+        },
+        userinfo: {
+          "https://attributes.spid.gov.it/name": null,
+          "https://attributes.spid.gov.it/familyName": null,
+          "https://attributes.spid.gov.it/email": null,
+          "https://attributes.spid.gov.it/fiscalNumber": null,
+        },
+      },
+      prompt: "consent login",
+      code_challenge,
+      code_challenge_method: "S256",
+      iss: "http://127.0.0.1:3000/oidc/rp/",
+      sub: "http://127.0.0.1:3000/oidc/rp/",
+    });
   });
   test("callback endpoint happy path", async () => {
     // TODO

@@ -1,5 +1,5 @@
 import * as jose from "jose";
-import { ajv, inferAlgForJWK, makeIat } from "./utils";
+import { ajv, makeIat, verifyJWS } from "./utils";
 import {
   TrustAnchorEntityConfiguration,
   IdentityProviderEntityConfiguration,
@@ -85,13 +85,7 @@ async function getEntityStatement(
       );
     }
     const jws = await response.body;
-    const { payload } = await jose.compactVerify(jws, async (header) => {
-      if (!header.kid) throw new Error("missing kid in header");
-      const jwk = superior.jwks.keys.find((key: any) => key.kid === header.kid);
-      if (!jwk) throw new Error("no matching key with kid found");
-      return await jose.importJWK(jwk, inferAlgForJWK(jwk));
-    });
-    return JSON.parse(new TextDecoder().decode(payload));
+    return await verifyJWS(jws, superior.jwks);
   } catch (error) {
     throw new Error(
       `Failed to get entity statement for ${descendant.sub} from ${superior.metadata.federation_entity.federation_fetch_endpoint} beacuse of ${error}`
@@ -196,14 +190,7 @@ function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
 
 export async function verifyEntityConfiguration(jws: string): Promise<unknown> {
   const decoded: any = jose.decodeJwt(jws);
-  const { payload } = await jose.compactVerify(jws, async (header) => {
-    if (!header.kid) throw new Error("missing kid in header");
-    const jwk = decoded.jwks.keys.find((key: any) => key.kid === header.kid);
-    if (!jwk) throw new Error("no matching key with kid found");
-    return await jose.importJWK(jwk, inferAlgForJWK(jwk));
-  });
-  const entity_configuration = JSON.parse(new TextDecoder().decode(payload));
-  return entity_configuration;
+  return await verifyJWS(jws, decoded.jwks);
 }
 
 const trustChainCache = new Map<string, Awaited<ReturnType<typeof getAndVerifyTrustChain>>>();
