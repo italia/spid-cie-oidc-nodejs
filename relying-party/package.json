@@ -18,7 +18,8 @@
     "build": "rollup -c",
     "format": "prettier --write src",
     "test": "jest",
-    "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\""
+    "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\"",
+    "ci:coverage": "jest --silent  --coverage --collectCoverageFrom=\"./src/**\" --coverageReporters=\"json-summary\" && node coverage-badge.js"
   },
   "dependencies": {
     "ajv": "^8.11.0",
