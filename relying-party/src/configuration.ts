@@ -136,9 +136,9 @@ export const AcrValue = {
 } as const;
 
 type HttpRequest =
-  | { method: "GET"; url: string; headers?: Record<string, string> }
-  | { method: "POST"; url: string; headers?: Record<string, string>; body: string };
-type HttpResponse = { status: number; headers: Record<string, string>; body: string };
+  | { method: "GET"; url: string; headers?: Record<string, string | undefined> }
+  | { method: "POST"; url: string; headers?: Record<string, string | undefined>; body: string };
+type HttpResponse = { status: number; headers: Record<string, string | undefined>; body: string };
 export type HttpClient = (request: HttpRequest) => Promise<HttpResponse>;
 
 export type AsyncStorage<T> = {

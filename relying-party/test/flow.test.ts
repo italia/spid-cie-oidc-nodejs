@@ -1,7 +1,7 @@
 import { createRelyingParty } from "../src/createRelyingParty";
 import { verifyEntityConfiguration } from "../src/getTrustChain";
 import { verifyJWS } from "../src/utils";
-import { mockConfiguration } from "./mocks";
+import { mockAccessToken, mockConfiguration, mockIdToken } from "./mocks";
 
 const mockRelyingParty = createRelyingParty(mockConfiguration);
 
@@ -10,12 +10,11 @@ describe("test whole flow happy path", () => {
     await mockRelyingParty.validateConfiguration();
   });
   test("entity configuration endpoint happy path", async () => {
-    const { createEntityConfigurationResponse } = await mockRelyingParty;
-    const response = await createEntityConfigurationResponse();
+    const response = await mockRelyingParty.createEntityConfigurationResponse();
     expect(response.status).toBe(200);
     expect(response.headers["Content-Type"]).toBe("application/entity-statement+jwt");
-    const entity_configuration = (await verifyEntityConfiguration(response.body)) as any;
-    expect(withoutFields(entity_configuration, ["iat", "exp"])).toEqual({
+    const { iat, exp, ...entity_configuration } = (await verifyEntityConfiguration(response.body)) as any;
+    expect(entity_configuration).toEqual({
       iss: "http://127.0.0.1:3000/oidc/rp/",
       sub: "http://127.0.0.1:3000/oidc/rp/",
       jwks: mockConfiguration.public_jwks,
@@ -37,8 +36,7 @@ describe("test whole flow happy path", () => {
     });
   });
   test("provider list happy path", async () => {
-    const { retrieveAvailableProviders } = await mockRelyingParty;
-    const providers = await retrieveAvailableProviders();
+    const providers = await mockRelyingParty.retrieveAvailableProviders();
     expect(providers).toEqual({
       spid: [
         {
@@ -51,8 +49,9 @@ describe("test whole flow happy path", () => {
     });
   });
   test("authorization redirect url happy path", async () => {
-    const { createAuthorizationRedirectURL } = await mockRelyingParty;
-    const authenticationUrl = new URL(await createAuthorizationRedirectURL("http://127.0.0.1:8000/oidc/op/"));
+    const authenticationUrl = new URL(
+      await mockRelyingParty.createAuthorizationRedirectURL("http://127.0.0.1:8000/oidc/op/")
+    );
     expect(authenticationUrl.origin).toBe("http://127.0.0.1:8000");
     expect(authenticationUrl.pathname).toBe("/oidc/op/authorization");
     const searchParams = Object.fromEntries(authenticationUrl.searchParams.entries());
@@ -102,17 +101,32 @@ describe("test whole flow happy path", () => {
     });
   });
   test("callback endpoint happy path", async () => {
-    // TODO
+    const auth = await mockRelyingParty.createAuthorizationRedirectURL("http://127.0.0.1:8000/oidc/op/");
+    const state = new URL(auth).searchParams.get("state") as string;
+    const outcome = await mockRelyingParty.manageCallback({ state, code: "" });
+    expect(outcome).toEqual({
+      type: "authentication-success",
+      user_info: {
+        sub: "e6b06083c2644bdc06f5a1cea22e6538b8fd59fc091837938c5969a8390be944",
+        "https://attributes.spid.gov.it/name": "peppe",
+        "https://attributes.spid.gov.it/familyName": "maradona",
+        "https://attributes.spid.gov.it/email": "that@ema.il",
+        "https://attributes.spid.gov.it/fiscalNumber": "8sada89s7da89sd7a98sd78",
+      },
+      tokens: {
+        id_token: mockIdToken,
+        access_token: mockAccessToken,
+        refresh_token: undefined,
+        revocation_endpoint: "http://127.0.0.1:8000/oidc/op/revocation/",
+      },
+    });
   });
   test("access token revocation happy path", async () => {
-    // TODO
+    await mockRelyingParty.revokeTokens({
+      id_token: mockIdToken,
+      access_token: mockAccessToken,
+      refresh_token: undefined,
+      revocation_endpoint: "http://127.0.0.1:8000/oidc/op/revocation/",
+    });
   });
 });
-
-function withoutFields<O extends Record<string, unknown>, Fields extends keyof O>(o: O, fiels: Array<Fields>) {
-  const result: O = { ...o };
-  for (const field of fiels) {
-    delete result[field];
-  }
-  return result;
-}

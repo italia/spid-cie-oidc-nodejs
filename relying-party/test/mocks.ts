@@ -1,6 +1,7 @@
+import * as jose from "jose";
 import { consoleLogger, createInMemoryAsyncStorage, noopLogger } from "../src";
 import { ConfigurationFacadeOptions, HttpClient, JWKs } from "../src/configuration";
-import { createJWS, makeExp, makeIat, undiciHttpClient } from "../src/utils";
+import { createJWS, generateRandomString, inferAlgForJWK, makeExp, makeIat, undiciHttpClient } from "../src/utils";
 
 const mockRelyingPartyPublicJWKs: JWKs = {
   keys: [
@@ -79,6 +80,9 @@ const mockTrustAnchorPrivateJWKs: JWKs = mockRelyingPartyPrivateJWKs ?? {
     },
   ],
 };
+
+export const mockIdToken = generateRandomString(128);
+export const mockAccessToken = generateRandomString(128);
 
 function mockRelyingPartyEntityConfiguration() {
   return createJWS(
@@ -341,6 +345,29 @@ function mockIdentityProviderEntityStatement() {
   );
 }
 
+async function mockUserInfo() {
+  return await encrypt(
+    await createJWS(
+      {
+        sub: "e6b06083c2644bdc06f5a1cea22e6538b8fd59fc091837938c5969a8390be944",
+        "https://attributes.spid.gov.it/name": "peppe",
+        "https://attributes.spid.gov.it/familyName": "maradona",
+        "https://attributes.spid.gov.it/email": "that@ema.il",
+        "https://attributes.spid.gov.it/fiscalNumber": "8sada89s7da89sd7a98sd78",
+      },
+      mockIdentityProviderPrivateJWKs.keys[0]
+    ),
+    mockRelyingPartyPublicJWKs.keys[0]
+  );
+}
+
+async function encrypt(content: string, jwk: jose.JWK) {
+  const jwe = await new jose.CompactEncrypt(new TextEncoder().encode(content))
+    .setProtectedHeader({ alg: "RSA-OAEP-256", enc: "A256GCM", kid: jwk.kid })
+    .encrypt(await jose.importJWK(jwk, inferAlgForJWK(jwk)));
+  return jwe;
+}
+
 const mockHttpClient: HttpClient = async (request) => {
   switch (request.url) {
     case "http://127.0.0.1:3000/oidc/rp/.well-known/openid-federation": {
@@ -378,6 +405,30 @@ const mockHttpClient: HttpClient = async (request) => {
         body: await mockIdentityProviderEntityStatement(),
       };
     }
+    case "http://127.0.0.1:8000/oidc/op/token/": {
+      return {
+        status: 200,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          id_token: mockIdToken,
+          access_token: mockAccessToken,
+        }),
+      };
+    }
+    case "http://127.0.0.1:8000/oidc/op/userinfo/": {
+      return {
+        status: 200,
+        headers: { "content-type": "application/jose" },
+        body: await mockUserInfo(),
+      };
+    }
+    case "http://127.0.0.1:8000/oidc/op/revocation/": {
+      return {
+        status: 200,
+        headers: {},
+        body: "",
+      };
+    }
     default: {
       console.log(request);
       console.dir(await undiciHttpClient(request), { depth: null });
@@ -399,7 +450,8 @@ export const mockConfiguration = ensure<ConfigurationFacadeOptions>()({
     spid: ["http://127.0.0.1:8000/oidc/op/"],
     cie: [],
   },
-  logger: noopLogger ?? consoleLogger,
+  logger: noopLogger,
+  // logger: consoleLogger,
   auditLogger: () => {},
   storage: createInMemoryAsyncStorage(),
   httpClient: mockHttpClient,

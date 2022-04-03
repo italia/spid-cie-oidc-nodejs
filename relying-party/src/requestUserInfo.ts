@@ -17,7 +17,7 @@ export async function requestUserInfo(
   configuration.logger.info({ message: "User info request", request });
   // SHOULDDO ensure timeout and ssl is respected
   const response = await configuration.httpClient(request);
-  if (response.status === 200) {
+  if (response.status === 200 && response.headers["content-type"] === "application/jose") {
     const jwe = await response.body;
     const jws = await decrypt(configuration, jwe);
     const jwt = await verify(authenticationRequest, jws);
