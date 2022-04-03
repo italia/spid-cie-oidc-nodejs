@@ -128,7 +128,7 @@ app.get("/oidc/rp/.well-known/openid-federation", (req, res) => {
 
 This is a User-facing Endpoint that can be served on arbitrary route, it can return a JSON response for example if called from fronted or render static html.
 
-It lists available identity providers by type. Use this list to make create links for logging in
+It lists available identity providers by type. Use this list to create links for logging in
 
 ```html
 <a href="127.0.0.1:3000/oidc/rp/authorization?provider=http://127.0.0.1:8000/oidc/op/">
@@ -201,14 +201,14 @@ This is a System-facing Endpoint that **MUST** be served on `${configuration.red
 
 Route examples:
 
-If you used `EndpointHandlers({client_id: "mydomain.com", ...})`, the `redirect_uris` property of the configuration will be `["http://mydomain.com/callback"]` and this endpoint **MUST** be served on `http://mydomain.com/callback` route.
+If you used `createRelyingParty({client_id: "mydomain.com", ...})`, the `redirect_uris` property of the configuration will be `["http://mydomain.com/callback"]` and this endpoint **MUST** be served on `http://mydomain.com/callback` route.
 
-If you used `EndpointHandlers({client_id: "mydomain.com", redirect_uris: ["mydomain.com/openid-connect-callback"], ...})`, this endpoint **MUST** be served on `http://mydomain.com/openid-connect-callback` route.
+If you used `createRelyingParty({client_id: "mydomain.com", redirect_uris: ["mydomain.com/openid-connect-callback"], ...})`, this endpoint **MUST** be served on `http://mydomain.com/openid-connect-callback` route.
 
 There are two cases for this endpoint:
 
 - Error
-  - it will receive this kind of query url `?error=...&error_description="..."` (where error_description is optional)
+  - it will receive this kind of query url `?error=...&error_description=...` (where error_description is optional)
 - Succcess
   - it will receive this kind of query url `?code=...&state=...` (both parameters mandatory)
 
@@ -217,12 +217,12 @@ The `manageCallback` function **MUST** be called only once for each time this en
 Then `manageCallback` function will return a Promise that can 
   - resolve to:
     - `{ type: "authentication-success", user_info: "...", tokens: {...}}` (if the user has granted access)
-      - in this case you as you:
+      - in this case you:
         - can store the user_info in the server side session
         - **MUST** store the `tokens` in the server side session (it will be used later to logout the user)
         - redirect or render a page to the user
     - `{ type: "authentication-error", error: "...", error_description: "..."}` (if the user has denied access or some error occurs during the authentication process on the identity provider server side)
-      - i this case you must:
+      - in this case you must:
         - redirect or render a page to the user
   - reject with an error (something gone wrong on our relying party)
 
@@ -267,7 +267,7 @@ This is a User-facing Endpoint that can be served on arbitrary route, it can ret
 
 You **MUST** have saved `tokens` from a previus call to `manageCallback` into the session.
 
-After token revocation you **MUST** destroy the sesssion.
+After token revocation you **MUST** destroy the session.
 
 For example (with Express):
 
