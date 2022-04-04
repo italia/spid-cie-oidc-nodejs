@@ -22,8 +22,8 @@ export async function requestUserInfo(
     const jws = await decrypt(configuration, jwe);
     const jwt = await verify(authenticationRequest, jws);
     configuration.logger.info({ message: "User info request succeeded", request, response });
-    if (!(validateUserInfoCie(jwt) || validateUserInfoSpid(jwt))) {
-      throw new Error("invalid user info response");
+    if (!(validateUserInfoCie(jwt) && validateUserInfoSpid(jwt))) {
+      throw new Error("Invalid user info response");
     }
     return jwt;
   } else {

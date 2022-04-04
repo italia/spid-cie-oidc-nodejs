@@ -1,6 +1,6 @@
 # SPID/CIE OIDC Federation, for Node.js
 
-[![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc) [![Get invited](https://slack.developers.italia.it/badge.svg)](https://slack.developers.italia.it/)
+[![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc) [![Relying Party Test Node.js CI](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml/badge.svg)](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml) [![Test Coverage](https://api.codeclimate.com/v1/badges/dd8b3620db78a7fa4b64/test_coverage)](https://codeclimate.com/github/italia/spid-cie-oidc-nodejs/test_coverage) [![Get invited](https://slack.developers.italia.it/badge.svg)](https://slack.developers.italia.it/)
 [![Join the #spid openid](https://img.shields.io/badge/Slack%20channel-%23spid%20openid-blue.svg)](https://developersitalia.slack.com/archives/C7E85ED1N/)
 
 **SPID/CIE OIDC Federation** is a suite of **Node.js libraries** and **example projects** designed to ease the creation of an Openid Connect Federation.
@@ -19,7 +19,7 @@
 
 ## Packages
 
-### [**SPID/CIE OIDC Federation Relying Party** (`spid-cie-oidc`)][oidc-relying-party] [![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc)
+### [**SPID/CIE OIDC Federation Relying Party** (`spid-cie-oidc`)
 
 A Node.js library that exposes utility functions to configure your web-application endpoints in order to support the SPID/CIE authentication over the OpenID Federation Authentication protocol.
 

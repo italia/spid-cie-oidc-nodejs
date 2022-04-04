@@ -32,6 +32,10 @@ export function createRelyingParty(configurationFacade: ConfigurationFacadeOptio
       await setupConfiguration();
     },
 
+    async getConfiguration() {
+      return await setupConfiguration();
+    },
+
     async retrieveAvailableProviders(): Promise<
       Record<
         string,

@@ -37,5 +37,6 @@ export async function revokeAccessToken(configuration: Configuration, tokens: To
     configuration.logger.info({ message: `Revocation request succeeded`, request, response });
   } else {
     configuration.logger.warn({ message: `Revocation request failed`, request, response });
+    throw new Error("Revocation request failed");
   }
 }

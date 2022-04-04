@@ -1,9 +1,6 @@
-import { createRelyingParty } from "../src/createRelyingParty";
 import { verifyEntityConfiguration } from "../src/getTrustChain";
 import { verifyJWS } from "../src/utils";
-import { mockAccessToken, mockConfiguration, mockIdToken } from "./mocks";
-
-const mockRelyingParty = createRelyingParty(mockConfiguration);
+import { mockAccessToken, mockConfiguration, mockIdToken, mockRelyingParty } from "./mocks";
 
 describe("test whole flow happy path", () => {
   test("mock configuration is valid", async () => {

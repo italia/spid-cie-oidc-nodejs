@@ -1,9 +1,9 @@
 import * as jose from "jose";
-import { consoleLogger, createInMemoryAsyncStorage, noopLogger } from "../src";
+import { consoleLogger, createInMemoryAsyncStorage, createRelyingParty, noopLogger } from "../src";
 import { ConfigurationFacadeOptions, HttpClient, JWKs } from "../src/configuration";
 import { createJWS, generateRandomString, inferAlgForJWK, makeExp, makeIat, undiciHttpClient } from "../src/utils";
 
-const mockRelyingPartyPublicJWKs: JWKs = {
+export const mockRelyingPartyPublicJWKs: JWKs = {
   keys: [
     {
       kty: "RSA",
@@ -14,7 +14,7 @@ const mockRelyingPartyPublicJWKs: JWKs = {
   ],
 };
 
-const mockRelyingPartyPrivateJWKs: JWKs = {
+export const mockRelyingPartyPrivateJWKs: JWKs = {
   keys: [
     {
       kty: "RSA",
@@ -31,7 +31,7 @@ const mockRelyingPartyPrivateJWKs: JWKs = {
   ],
 };
 
-const mockIdentityProviderPublicJWKs: JWKs = mockRelyingPartyPublicJWKs ?? {
+export const mockIdentityProviderPublicJWKs: JWKs = mockRelyingPartyPublicJWKs ?? {
   keys: [
     {
       kty: "RSA",
@@ -345,10 +345,10 @@ function mockIdentityProviderEntityStatement() {
   );
 }
 
-async function mockUserInfo() {
+export async function mockUserInfo(user_info?: any) {
   return await encrypt(
     await createJWS(
-      {
+      user_info ?? {
         sub: "e6b06083c2644bdc06f5a1cea22e6538b8fd59fc091837938c5969a8390be944",
         "https://attributes.spid.gov.it/name": "peppe",
         "https://attributes.spid.gov.it/familyName": "maradona",
@@ -368,7 +368,19 @@ async function encrypt(content: string, jwk: jose.JWK) {
   return jwe;
 }
 
+// let mockHttpClientNextHandler: { resolve(value: unknown): void; handler: HttpClient } | null = null;
+// export function mockNextHttpClientResponse(handler: HttpClient) {
+//   return new Promise((resolve) => {
+//     mockHttpClientNextHandler = { resolve, handler };
+//   });
+// }
 const mockHttpClient: HttpClient = async (request) => {
+  // if (mockHttpClientNextHandler !== null) {
+  //   mockHttpClientNextHandler.resolve(undefined);
+  //   const response = mockHttpClientNextHandler.handler(request);
+  //   mockHttpClientNextHandler = null;
+  //   return await response;
+  // }
   switch (request.url) {
     case "http://127.0.0.1:3000/oidc/rp/.well-known/openid-federation": {
       return {
@@ -458,3 +470,5 @@ export const mockConfiguration = ensure<ConfigurationFacadeOptions>()({
   public_jwks: mockRelyingPartyPublicJWKs,
   private_jwks: mockRelyingPartyPrivateJWKs,
 });
+
+export const mockRelyingParty = createRelyingParty(mockConfiguration);
