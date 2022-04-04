@@ -9,7 +9,12 @@
     "lib",
     "package.json"
   ],
-  "keywords": ["spid", "cie", "oidc", "relying-party"],
+  "keywords": [
+    "spid",
+    "cie",
+    "oidc",
+    "relying-party"
+  ],
   "repository": "https://github.com/italia/spid-cie-oidc-nodejs",
   "author": "Frederik Batuna <frederik.batuna@smc.it>",
   "license": "Apache-2.0",
@@ -18,8 +23,7 @@
     "build": "rollup -c",
     "format": "prettier --write src",
     "test": "jest",
-    "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\"",
-    "ci:coverage": "jest --silent  --coverage --collectCoverageFrom=\"./src/**\" --coverageReporters=\"json-summary\" && node coverage-badge.js"
+    "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\""
   },
   "dependencies": {
     "ajv": "^8.11.0",

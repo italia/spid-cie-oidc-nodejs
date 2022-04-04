@@ -1,6 +1,6 @@
 # SPID/CIE OIDC Federation, for Node.js
 
-[![Get invited](https://slack.developers.italia.it/badge.svg)](https://slack.developers.italia.it/)
+[![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc) [![Get invited](https://slack.developers.italia.it/badge.svg)](https://slack.developers.italia.it/)
 [![Join the #spid openid](https://img.shields.io/badge/Slack%20channel-%23spid%20openid-blue.svg)](https://developersitalia.slack.com/archives/C7E85ED1N/)
 
 **SPID/CIE OIDC Federation** is a suite of **Node.js libraries** and **example projects** designed to ease the creation of an Openid Connect Federation.

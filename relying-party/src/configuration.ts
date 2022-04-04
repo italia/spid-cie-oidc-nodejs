@@ -268,10 +268,7 @@ export async function createConfigurationFromConfigurationFacade({
       spid: {
         acr_values: AcrValue.l2,
         requestedClaims: {
-          id_token: {
-            "https://attributes.spid.gov.it/familyName": { essential: true },
-            "https://attributes.spid.gov.it/email": { essential: true },
-          },
+          id_token: {},
           userinfo: {
             "https://attributes.spid.gov.it/name": null,
             "https://attributes.spid.gov.it/familyName": null,

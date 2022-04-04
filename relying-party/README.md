@@ -1,6 +1,6 @@
 # SPID/CIE OIDC Federation Relying Party, for Node.js
 
-[![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc) [![Relying Party Test Node.js CI](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml/badge.svg)](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml) ![coverage](https://img.shields.io/badge/test%20coverage-67%25-yellow)
+[![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc) [![Relying Party Test Node.js CI](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml/badge.svg)](https://github.com/italia/spid-cie-oidc-nodejs/actions/workflows/relying-party-test-node.js.yml) [![Test Coverage](https://api.codeclimate.com/v1/badges/dd8b3620db78a7fa4b64/test_coverage)](https://codeclimate.com/github/italia/spid-cie-oidc-nodejs/test_coverage)
 
 This package includes building blocks to implement openid federation relaying party into your application.
 
@@ -310,10 +310,7 @@ import { AcrValue } from "spid-cie-oidc"
   spid: {
     acr_values: AcrValue.l2,
     requestedClaims: {
-      id_token: {
-        "https://attributes.spid.gov.it/familyName": { essential: true },
-        "https://attributes.spid.gov.it/email": { essential: true },
-      },
+      id_token: {},
       userinfo: {
         "https://attributes.spid.gov.it/name": null,
         "https://attributes.spid.gov.it/familyName": null,
