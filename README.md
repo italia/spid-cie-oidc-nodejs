@@ -11,7 +11,7 @@
 
 | Library                                                | Status                        |
 | ------------------------------------------------------ | ----------------------------- |
-| **OpenID Connect Federation**                          | ![In roadmap][status-roadmap] |
+| **OpenID Connect Trust Anchor**                        | ![In roadmap][status-roadmap] |
 | **OpenID Connect Identity Provider**                   | ![In roadmap][status-roadmap] |
 | [**OpenID Connect Relying Party**][oidc-relying-party] | ![Ready][status-ready]        |
 
@@ -21,7 +21,7 @@
 
 ### [**SPID/CIE OIDC Federation Relying Party** (`spid-cie-oidc`)][oidc-relying-party] [![npm](https://img.shields.io/npm/v/spid-cie-oidc.svg)](https://www.npmjs.com/package/spid-cie-oidc)
 
-A Node.js library that exposes utility functions to configure your web-application endpoints in order to support the SPID/CIE dialect of the OpenID Federation Authentication protocol.
+A Node.js library that exposes utility functions to configure your web-application endpoints in order to support the SPID/CIE authentication over the OpenID Federation Authentication protocol.
 
 ## Example projects
 
@@ -43,6 +43,17 @@ Your contribution is welcome, no question is useless and no answer is obvious, w
 #### Contribute as end user
 
 Please open an issue if you've discoveerd a bug or if you want to ask some features.
+
+## Implementation Notes
+
+The [jose](https://github.com/panva/jose) library is used fro JWT encryption and signature related operations.
+
+This project proposes an implementation of the italian OIDC Federation profile with
+__automatic_client_registration__ and the adoption of the trust marks as mandatory.
+
+If you're looking for a fully compliant implementation of OIDC Federation 1.0,
+with a full support of explicit client registration, please look at idpy's
+[fedservice](https://github.com/rohe/fedservice).
 
 ## License and Authors
 

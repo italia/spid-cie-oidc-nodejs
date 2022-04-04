@@ -78,10 +78,20 @@ export type Configuration = {
   /** @see {@link Configuration.public_jwks} */
   private_jwks: JWKs;
 
+  /** what kind of application this relyin party is, for different application types dirreferent rules can appply */
   application_type: "web";
+
+  /** response types supported by this relying party, there can be more in the future */
   response_types: Array<"code">;
+
+  /**
+   * the scope of authentication supported by this relying party
+   *
+   * **openid** is required by default
+   *
+   * **offline_access** is required t access user info when the user is not using a device
+   */
   scope: Array<"openid" | "offline_access">;
-  token_endpoint_auth_method: Array<"private_key_jwt">;
 
   providers: {
     [P in IdentityProviderProfile]: {
@@ -113,6 +123,7 @@ export type Configuration = {
    */
   auditLogger(message: object | unknown): void;
 
+  /** a function that will be used to make http request to other parties */
   httpClient: HttpClient;
 };
 
@@ -253,7 +264,6 @@ export async function createConfigurationFromConfigurationFacade({
     application_type: "web",
     response_types: ["code"],
     scope: ["openid", "offline_access"],
-    token_endpoint_auth_method: ["private_key_jwt"],
     providers: {
       spid: {
         acr_values: AcrValue.l2,
@@ -315,9 +325,6 @@ export async function validateConfiguration(configuration: Configuration) {
   }
   if (uniq(configuration.scope).length !== configuration.scope.length) {
     throw new Error(`configuration: scope must not contain duplicates ${JSON.stringify(configuration.scope)}`);
-  }
-  if (!isEqual(configuration.token_endpoint_auth_method, ["private_key_jwt"])) {
-    throw new Error(`configuration: token_endpoint_auth_method must be ["private_key_jwt"]`);
   }
   if (configuration.federation_default_exp <= 0) {
     throw new Error(`configuration: federation_default_exp must be > 0`);

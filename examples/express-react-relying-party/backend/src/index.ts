@@ -19,14 +19,7 @@ const identity_providers = process.env.IDENTITY_PROVIDER
   ? [process.env.IDENTITY_PROVIDER]
   : ["http://127.0.0.1:8000/oidc/op/"];
 
-const {
-  validateConfiguration,
-  retrieveAvailableProviders,
-  createEntityConfigurationResponse,
-  createAuthorizationRedirectURL,
-  manageCallback,
-  revokeTokens,
-} = createRelyingParty({
+const relyingParty = createRelyingParty({
   client_id,
   client_name: "My Application",
   trust_anchors,
@@ -42,7 +35,7 @@ const {
   storage: createInMemoryAsyncStorage(),
 });
 
-validateConfiguration().catch((error) => {
+relyingParty.validateConfiguration().catch((error) => {
   console.error(error);
   process.exit(1);
 });
@@ -59,7 +52,7 @@ declare module "express-session" {
 
 app.get("/oidc/rp/providers", async (req, res) => {
   try {
-    res.json(await retrieveAvailableProviders());
+    res.json(await relyingParty.retrieveAvailableProviders());
   } catch (error) {
     res.status(500).json(error);
   }
@@ -68,7 +61,9 @@ app.get("/oidc/rp/providers", async (req, res) => {
 app.get("/oidc/rp/authorization", async (req, res) => {
   try {
     res.redirect(
-      await createAuthorizationRedirectURL(req.query.provider as string)
+      await relyingParty.createAuthorizationRedirectURL(
+        req.query.provider as string
+      )
     );
   } catch (error) {
     res.status(500).json(error);
@@ -77,7 +72,7 @@ app.get("/oidc/rp/authorization", async (req, res) => {
 
 app.get("/oidc/rp/callback", async (req, res) => {
   try {
-    const outcome = await manageCallback(req.query as any);
+    const outcome = await relyingParty.manageCallback(req.query as any);
     switch (outcome.type) {
       case "authentication-success": {
         req.session.user_info = outcome.user_info;
@@ -105,7 +100,7 @@ app.get("/oidc/rp/revocation", async (req, res) => {
     if (!req.session.tokens) {
       res.status(400).json({ error: "user is not logged in" });
     } else {
-      await revokeTokens(req.session.tokens);
+      await relyingParty.revokeTokens(req.session.tokens);
       req.session.destroy(() => {
         res.json({ message: "user logged out" });
       });
@@ -117,7 +112,7 @@ app.get("/oidc/rp/revocation", async (req, res) => {
 
 app.get("/oidc/rp/.well-known/openid-federation", async (req, res) => {
   try {
-    const response = await createEntityConfigurationResponse();
+    const response = await relyingParty.createEntityConfigurationResponse();
     res.status(response.status);
     res.set("Content-Type", response.headers["Content-Type"]);
     res.send(response.body);

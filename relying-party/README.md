@@ -25,14 +25,7 @@ import {
 } from "spid-cie-oidc";
 
 // create functions that will manage authentication with bare minimum configuration
-const {
-  validateConfiguration,
-  retrieveAvailableProviders,
-  createEntityConfigurationResponse,
-  createAuthorizationRedirectURL,
-  manageCallback,
-  revokeAccessTokensByUserIdentifier,
-} = createRelayingParty({
+const relyingParty = createRelayingParty({
   client_id: `http://127.0.0.1:3000/oidc/rp/`,
   client_name: "My Application",
   trust_anchors: ["http://127.0.0.1:8000/"],
@@ -52,7 +45,7 @@ const {
 });
 
 // ensure you call this method to catch early configuration errors
-validateConfiguration().catch((error) => {
+relyingParty.validateConfiguration().catch((error) => {
   console.error(error);
   process.exit(1);
 });
@@ -64,7 +57,7 @@ Expressjs example: (see full example [here](../examples/express-react-relying-pa
 
 ```typescript
 app.get("/providers", async (req, res) => {
-  retrieveAvailableProviders().then((providers) => {
+  relyingParty.retrieveAvailableProviders().then((providers) => {
     res.json(providers);
   });
 })
@@ -86,7 +79,7 @@ For example (with Express):
 
 ```typescript
 app.get("/oidc/rp/.well-known/openid-federation", (req, res) => {
-  createEntityConfigurationResponse()
+  relyingParty.createEntityConfigurationResponse()
     .then((response) => {
       res.status(response.status);
       res.set("Content-Type", response.headers["Content-Type"]);
@@ -124,7 +117,7 @@ app.get("/oidc/rp/.well-known/openid-federation", (req, res) => {
 > Since this secondary form is not mandatory and callers are only _RECOMMENDED_ to support it, if you can install the endpoint as a root `/.well-known` path that should be your first option.
 </details>
 
-#### `providerList` Endpoint
+#### `providers` Endpoint
 
 This is a User-facing Endpoint that can be served on arbitrary route, it can return a JSON response for example if called from fronted or render static html.
 
@@ -140,7 +133,7 @@ For example (with Express):
 
 ```typescript
 app.get("/providers", (req, res) => {
-  retrieveAvailableProviders(providers)
+  relyingParty.retrieveAvailableProviders(providers)
     .then((response) => {
       res.json(providers);
     })
@@ -185,7 +178,7 @@ For example (with Express):
 // in this example we assume the user clicked on a login link of this form
 // <a href="/authorization?provider=http://127.0.0.1:8000/">Login</a>
 app.get("/authorization", (req, res) => {
-  createAuthorizationRedirectURL(req.query.provider)
+  relyingParty.createAuthorizationRedirectURL(req.query.provider)
     .then((redirectUrl) => {
       res.redirect(redirectUrl);
     })
@@ -230,7 +223,7 @@ For example (with Express):
 
 ```typescript
 app.get("/callback", (req, res) => {
-  manageCallback(req.query)
+  relyingParty.manageCallback(req.query)
     .then(outcome => {
       switch (outcome.type) {
         case "authentication-success": {
@@ -277,7 +270,7 @@ app.get("/logout", (req, res) => {
     res.status(400).json({ error: "user is not logged in" });
     return;
   }
-  revokeTokens(req.session.tokens)
+  relyingParty.revokeTokens(req.session.tokens)
     .then(() => {
       req.session.destroy(() => {
         res.json({ message: "user logged out" })
@@ -287,6 +280,63 @@ app.get("/logout", (req, res) => {
       // here goes your error managment
     })
 });
+```
+
+### Configuration
+
+| Property | Default | Description |
+|----------|---------|-------------|
+| `client_name` | | Human-readable name of this application |
+| `contatcts` | | [**OPTIONAL**] Array of contacts See the [relevant specification for OpenID](https://openid.net/specs/openid-connect-federation-1_0.html#rfc.section.4.6) |
+| `client_id` | | Url that identifies this relying party. The relying party must be reachable on this url from outside |
+| `trust_anchors` | | Array of trust anchors urls |
+| `identity_providers` | | Array of identity providers urls by profile ex: `{spid: ["spid.gov.it"], cie: ["cie.gov.it"]}` |
+| `public_jwks` or `public_jwks_path` | | public keys in JWK format or file path to read them from |
+| `private_jwks` or `public_jwks_path` | | private keys in JWK format or file path to read them from |
+| `trust_marks` or `public_jwks_path` | | Array of trust marks obtained during onboarding process or file path to read them from|
+| `storage` | | This will be used to store data necessary for managing authentication. Supply an implementation suited for your usecase. ex: `{ async read(key) {}, async write(key, value) {}, async delete() {} }` |
+| `logger` | | This will be used to log activities performed by the relying party operations. This object must implement [abstract-logging](https://github.com/jsumners/abstract-logging#readme) interface|
+| `auditLogger` | | This function will be used to log obtained **access tokens** that **MUST BE STORED 24 MONTHS** |
+| `redirect_uris` | `[client_id + "callback"]` | Array of possible urls (of this relying party) where the user browser will be redirected after authentication on the identity provider server |
+| `application type` | `"web"` | Other values are not supported at the moment |
+| `scope` | `["openid"]` | Other values are not supported at the moment |
+| `response_types` | `["code"]` | Other values are not supported at the moment |
+| `federation_default_exp` | `48 * 60 * 60` | Expiration in seconds for claims exchanged with other parties of the federation |
+| `providers` | see below | What user information to request by identity profiler id |
+
+```typescript
+import { AcrValue } from "spid-cie-oidc"
+{
+  spid: {
+    acr_values: AcrValue.l2,
+    requestedClaims: {
+      id_token: {
+        "https://attributes.spid.gov.it/familyName": { essential: true },
+        "https://attributes.spid.gov.it/email": { essential: true },
+      },
+      userinfo: {
+        "https://attributes.spid.gov.it/name": null,
+        "https://attributes.spid.gov.it/familyName": null,
+        "https://attributes.spid.gov.it/email": null,
+        "https://attributes.spid.gov.it/fiscalNumber": null,
+      },
+    },
+  },
+  cie: {
+    acr_values: AcrValue.l2,
+    requestedClaims: {
+      id_token: {
+        family_name: { essential: true },
+        email: { essential: true },
+      },
+      userinfo: {
+        given_name: null,
+        family_name: null,
+        email: null,
+      },
+    },
+  },
+}
 ```
 
 ## Tests
