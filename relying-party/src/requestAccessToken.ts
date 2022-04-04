@@ -52,6 +52,6 @@ export async function requestAccessToken(
     return tokens as { id_token: string; access_token: string; refresh_token?: string };
   } else {
     configuration.logger.error({ message: "Access token request failed", request, response });
-    throw new Error(`access token request failed`);
+    throw new Error(`Access token request failed`);
   }
 }

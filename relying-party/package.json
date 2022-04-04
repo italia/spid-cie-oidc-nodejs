@@ -21,7 +21,7 @@
   "private": false,
   "scripts": {
     "build": "rollup -c",
-    "format": "prettier --write src",
+    "format": "prettier --write src && prettier --write test",
     "test": "jest",
     "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\""
   },

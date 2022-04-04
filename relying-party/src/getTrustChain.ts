@@ -5,7 +5,7 @@ import {
   IdentityProviderEntityConfiguration,
   RelyingPartyEntityConfiguration,
 } from "./createEntityConfiguration";
-import { cloneDeep, difference, intersection } from "lodash";
+import { cloneDeep, difference } from "lodash";
 import { Configuration, JWKs, TrustMark } from "./configuration";
 import { JSONSchemaType, ValidateFunction } from "ajv";
 
@@ -66,7 +66,7 @@ async function getAndVerifyTrustChain(
   return { exp, entity_configuration };
 }
 
-async function getEntityStatement(
+export async function getEntityStatement(
   configuration: Configuration,
   descendant: RelyingPartyEntityConfiguration | IdentityProviderEntityConfiguration,
   superior: TrustAnchorEntityConfiguration
@@ -93,7 +93,7 @@ async function getEntityStatement(
   }
 }
 
-async function getEntityConfiguration<T>(
+export async function getEntityConfiguration<T>(
   configuration: Configuration,
   url: string,
   validateFunction: ValidateFunction<T>
@@ -115,11 +115,7 @@ async function getEntityConfiguration<T>(
     }
     const entity_configuration = await verifyEntityConfiguration(jws);
     if (!validateFunction(entity_configuration)) {
-      throw new Error(
-        `Malformed entity configuration ${JSON.stringify(entity_configuration)} ${JSON.stringify(
-          validateFunction.errors
-        )}`
-      );
+      throw new Error(`Malformed entity configuration`);
     }
     return entity_configuration;
   } catch (error) {
@@ -152,7 +148,7 @@ type MetadataPolicy = Record<
   >
 >;
 
-function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
+export function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
   metadata = cloneDeep(metadata);
   for (const [parentField, parentPolicy] of Object.entries(policy)) {
     if (!(parentField in metadata)) continue;
@@ -165,11 +161,11 @@ function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
       }
       if (childPolicy.default) {
         if (!(childField in metadata[parentField])) {
-          metadata[parentField][childField] = childPolicy.value;
+          metadata[parentField][childField] = childPolicy.default;
         }
       }
       if (childPolicy.subset_of) {
-        if (intersection(metadata[parentField][childField], childPolicy.subset_of).length === 0) {
+        if (difference(metadata[parentField][childField], childPolicy.subset_of).length > 0) {
           delete metadata[parentField][childField];
         }
       }

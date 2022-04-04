@@ -84,7 +84,7 @@ const mockTrustAnchorPrivateJWKs: JWKs = mockRelyingPartyPrivateJWKs ?? {
 export const mockIdToken = generateRandomString(128);
 export const mockAccessToken = generateRandomString(128);
 
-function mockRelyingPartyEntityConfiguration() {
+export function mockRelyingPartyEntityConfiguration() {
   return createJWS(
     {
       iat: makeIat(),

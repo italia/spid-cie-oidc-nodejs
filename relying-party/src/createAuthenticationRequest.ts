@@ -5,10 +5,10 @@ import { getTrustChain } from "./getTrustChain";
 
 export async function createAuthenticationRequest(configuration: Configuration, provider: string) {
   if (!isValidURL(provider)) {
-    throw new Error(`provider is not a valid url ${provider}`);
+    throw new Error(`Provider is not a valid url ${provider}`);
   }
   if (!Object.values(configuration.identity_providers).some((providers) => providers.includes(provider))) {
-    throw new Error(`provider is not supported ${provider}`);
+    throw new Error(`Provider is not supported ${provider}`);
   }
   const identityProviderTrustChain = await getTrustChain(configuration, provider);
   if (!identityProviderTrustChain) {
