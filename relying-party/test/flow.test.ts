@@ -65,7 +65,7 @@ describe("test whole flow happy path", () => {
       acr_values: "https://www.spid.gov.it/SpidL2",
       aud: '["http://127.0.0.1:8000/oidc/op/","http://127.0.0.1:8000/oidc/op/authorization"]',
       claims:
-        '{"id_token":{"https://attributes.spid.gov.it/familyName":{"essential":true},"https://attributes.spid.gov.it/email":{"essential":true}},"userinfo":{"https://attributes.spid.gov.it/name":null,"https://attributes.spid.gov.it/familyName":null,"https://attributes.spid.gov.it/email":null,"https://attributes.spid.gov.it/fiscalNumber":null}}',
+        '{"id_token":{},"userinfo":{"https://attributes.spid.gov.it/name":null,"https://attributes.spid.gov.it/familyName":null,"https://attributes.spid.gov.it/email":null,"https://attributes.spid.gov.it/fiscalNumber":null}}',
       code_challenge_method: "S256",
       prompt: "consent login",
     });
@@ -82,10 +82,7 @@ describe("test whole flow happy path", () => {
       iat: Number(iat),
       aud: ["http://127.0.0.1:8000/oidc/op/", "http://127.0.0.1:8000/oidc/op/authorization"],
       claims: {
-        id_token: {
-          "https://attributes.spid.gov.it/familyName": { essential: true },
-          "https://attributes.spid.gov.it/email": { essential: true },
-        },
+        id_token: {},
         userinfo: {
           "https://attributes.spid.gov.it/name": null,
           "https://attributes.spid.gov.it/familyName": null,
