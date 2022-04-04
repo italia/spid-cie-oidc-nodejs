@@ -42,9 +42,9 @@ jobs:
           cache-dependency-path: 'relying-party/**/yarn.lock'
       - run: yarn
         working-directory: relying-party
-      - uses: paambaati/codeclimate-action@v2.2.4
+      - uses: paambaati/codeclimate-action@v2.5.3
         env:
-          CC_TEST_REPORTER_ID: 70734e31ffd3b5b8db07baa9b49c168b96022ff239aa4bf6061b77c62c6dbd42
+          CC_TEST_REPORTER_ID:  ${{ secrets.CodeClimate }}
         with:
           working-directory: relying-party
           coverageCommand: yarn test:coverage
