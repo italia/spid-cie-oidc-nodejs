@@ -42,7 +42,7 @@ describe("get entity statement", () => {
   });
 });
 
-describe("get entity statement", () => {
+describe("get entity configuration", () => {
   test("it fails on bad response headers", async () => {
     await expect(
       getEntityConfiguration(

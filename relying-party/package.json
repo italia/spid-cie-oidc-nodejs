@@ -23,7 +23,7 @@
     "build": "rollup -c",
     "format": "prettier --write src && prettier --write test",
     "test": "jest",
-    "test:coverage": "jest --coverage --collectCoverageFrom=\"./src/**\""
+    "test:coverage": "jest --config coverage.jest.config.json"
   },
   "dependencies": {
     "ajv": "^8.11.0",
