@@ -3,6 +3,6 @@ updates:
   - package-ecosystem: "npm"
     directory: "/relying-party"
     schedule:
-      timezone: weekly
+      interval: daily
     allow:
       - dependency-type: "production"
