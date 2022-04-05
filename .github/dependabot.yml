@@ -1,0 +1,8 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/relying-party"
+    schedule:
+      timezone: weekly
+    allow:
+      - dependency-type: "production"
