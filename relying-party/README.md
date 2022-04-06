@@ -219,6 +219,11 @@ Then `manageCallback` function will return a Promise that can
         - redirect or render a page to the user
   - reject with an error (something gone wrong on our relying party)
 
+`user_info` is a object containing keys and values. Claims supported by default are described [here](src/userInfo.ts). For unification these two attributes are suggested to use:
+
+- `"https://attributes.spid.gov.it/fiscalNumber"` for user info claims obtained from a SPID identity provider
+- `fiscalNumber` for user info claims obtained from a CIE identity provider
+
 For example (with Express):
 
 ```typescript
