@@ -2,7 +2,7 @@ import * as jose from "jose";
 import { inferAlgForJWK, isValidURL, readJSON, undiciHttpClient } from "./utils";
 import { isEqual, difference, uniq } from "lodash";
 import { consoleLogger } from "./default-implementations/consoleLogger";
-import { UserInfoCIE, UserInfoSPID } from "./requestUserInfo";
+import { UserInfoCIE, UserInfoSPID } from "./userInfo";
 import { AuthenticationRequest } from "./createAuthenticationRequest";
 
 /**

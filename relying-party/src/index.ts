@@ -1,7 +1,7 @@
 export { Configuration, AcrValue, AsyncStorage } from "./configuration";
 export { createRelyingParty } from "./createRelyingParty";
 export { generateJWKS } from "./utils";
-export { UserInfo } from "./requestUserInfo";
+export { UserInfo } from "./userInfo";
 export { Tokens } from "./revokeAccessToken";
 export { createLogRotatingFilesystem } from "./default-implementations/logRotatingFilesystem";
 export { createAuditLogRotatingFilesystem } from "./default-implementations/auditLogRotatingFilesystem";
