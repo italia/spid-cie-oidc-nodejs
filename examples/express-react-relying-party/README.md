@@ -10,12 +10,12 @@ This project showcases the relying party.
 
 ## How to run
 
-- run the SPID povider [federation](https://github.com/italia/spid-cie-oidc-django/examples/federation)
+- run the SPID povider [federation](https://github.com/italia/spid-cie-oidc-django/tree/main/examples/federation_authority)
   - follow these [instructions](https://github.com/italia/spid-cie-oidc-django/blob/main/docs/SETUP.md)
     - `./manage.py runserver 0.0.0.0:8000`
   - the project should run on [http://127.0.0.1:8000](http://127.0.0.1:8000), keep it running
 
-- run the CIE povider [provider](https://github.com/italia/spid-cie-oidc-django/examples/provider)
+- run the CIE povider [provider](https://github.com/italia/spid-cie-oidc-django/tree/main/examples/provider)
   - follow these [instructions](https://github.com/italia/spid-cie-oidc-django/blob/main/docs/SETUP.md)
     - `./manage.py runserver 0.0.0.0:8002`
   - the project should run on [http://127.0.0.1:8002](http://127.0.0.1:8002), keep it running
