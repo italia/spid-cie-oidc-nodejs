@@ -1,4 +1,5 @@
 import express from "express";
+import fs from "fs";
 import path from "path";
 import session from "express-session";
 import {
@@ -19,10 +20,21 @@ const identity_providers = process.env.IDENTITY_PROVIDER
   ? [process.env.IDENTITY_PROVIDER]
   : ["http://127.0.0.1:8000/oidc/op/"];
 
+// The trusted public keys of each trust anchor, obtained out of band during
+// onboarding. They are mandatory: the fetched Trust Anchor Entity Configuration
+// is verified against these pinned keys so a network attacker cannot substitute
+// the trust anchor keys (and the authorization servers) with its own.
+// Provide a JSON file mapping each trust anchor url to its JWKS, e.g.:
+//   { "http://127.0.0.1:8000/": { "keys": [ ... ] } }
+const trust_anchors_jwks = JSON.parse(
+  fs.readFileSync(process.env.TRUST_ANCHORS_JWKS_PATH ?? "./trust_anchors.jwks.json", "utf-8")
+);
+
 const relyingParty = createRelyingParty({
   client_id,
   client_name: "My Application",
   trust_anchors,
+  trust_anchors_jwks,
   identity_providers: {
     spid: identity_providers,
     cie: ["http://127.0.0.1:8002/oidc/op/"],

@@ -458,6 +458,7 @@ export const mockConfiguration = ensure<ConfigurationFacadeOptions>()({
   client_id: `http://127.0.0.1:3000/oidc/rp/`,
   client_name: "My Application",
   trust_anchors: ["http://127.0.0.1:8000/"],
+  trust_anchors_jwks: { "http://127.0.0.1:8000/": mockTrustAnchorPublicJWKs },
   identity_providers: {
     spid: ["http://127.0.0.1:8000/oidc/op/"],
     cie: [],

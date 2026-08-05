@@ -27,10 +27,20 @@ async function getAndVerifyTrustChain(
     identity_provider,
     validateIdentityProviderEntityConfiguration
   );
+  // The Trust Anchor Entity Configuration MUST be verified against the keys we
+  // already trust (pinned out of band in the configuration), NOT against the
+  // keys embedded in the fetched, self-signed document. Otherwise a network
+  // attacker could serve its own self-signed configuration and take over the
+  // whole federation (trust anchor / authorization server substitution).
+  const trust_anchor_jwks = configuration.trust_anchors_jwks[trust_anchor];
+  if (!trust_anchor_jwks || !trust_anchor_jwks.keys?.length) {
+    throw new Error(`No pinned keys (trust_anchors_jwks) configured for trust anchor ${trust_anchor}`);
+  }
   const trust_anchor_entity_configuration = await getEntityConfiguration(
     configuration,
     trust_anchor,
-    validateTrustAnchorEntityConfiguration
+    validateTrustAnchorEntityConfiguration,
+    trust_anchor_jwks
   );
   const relying_party_entity_statement = await getEntityStatement(
     configuration,
@@ -96,7 +106,8 @@ export async function getEntityStatement(
 export async function getEntityConfiguration<T>(
   configuration: Configuration,
   url: string,
-  validateFunction: ValidateFunction<T>
+  validateFunction: ValidateFunction<T>,
+  expected_jwks?: JWKs
 ): Promise<T> {
   try {
     // SHOULDDO when doing post request ensure timeout and ssl is respected
@@ -113,7 +124,7 @@ export async function getEntityConfiguration<T>(
         `Expected content-type application/entity-statement+jwt but got ${response.headers["content-type"]}`
       );
     }
-    const entity_configuration = await verifyEntityConfiguration(jws);
+    const entity_configuration = await verifyEntityConfiguration(jws, expected_jwks);
     if (!validateFunction(entity_configuration)) {
       throw new Error(`Malformed entity configuration`);
     }
@@ -184,9 +195,14 @@ export function applyMetadataPolicy(metadata: any, policy: MetadataPolicy) {
   return metadata;
 }
 
-export async function verifyEntityConfiguration(jws: string): Promise<unknown> {
-  const decoded: any = jose.decodeJwt(jws);
-  return await verifyJWS(jws, decoded.jwks);
+export async function verifyEntityConfiguration(jws: string, expected_jwks?: JWKs): Promise<unknown> {
+  // When a set of trusted keys is provided (the Trust Anchor case), the
+  // signature MUST be validated against those pinned keys. Only when no pinned
+  // keys are available do we fall back to the keys embedded in the self-signed
+  // document (leaf entity configurations, whose trust is established later by a
+  // statement signed by their superior).
+  const jwks: JWKs = expected_jwks ?? (jose.decodeJwt(jws) as any).jwks;
+  return await verifyJWS(jws, jwks);
 }
 
 const trustChainCache = new Map<string, Awaited<ReturnType<typeof getAndVerifyTrustChain>>>();
