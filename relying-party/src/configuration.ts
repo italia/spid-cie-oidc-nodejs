@@ -30,6 +30,22 @@ export type Configuration = {
   trust_anchors: Array<string>;
 
   /**
+   * The trusted public keys (JWKS) of each Trust Anchor, keyed by its url.
+   *
+   * These MUST be obtained out of band (e.g. during onboarding) and are used to
+   * verify the signature of the Trust Anchor Entity Configuration that is
+   * fetched over the network. Pinning them is mandatory: without it a network
+   * attacker could serve a self-signed Entity Configuration containing its own
+   * keys, which would be accepted, letting the attacker substitute the Trust
+   * Anchor keys and the authorization servers and hijack the logins.
+   *
+   * There must be an entry for every url in {@link Configuration.trust_anchors}.
+   *
+   * @example { "https://registry.spid.gov.it/": { keys: [ ... ] } }
+   */
+  trust_anchors_jwks: Record<string, JWKs>;
+
+  /**
    * OPTIONAL. JSON array with one or more strings representing contact persons at the entity.
    * These MAY contain names, e-mail addresses, descriptions, phone numbers, etc.
    *
@@ -170,7 +186,14 @@ function defaultAuditLogger(message: any) {
 
 type MandatoryConfiguration = Pick<
   Configuration,
-  "client_id" | "client_name" | "trust_anchors" | "identity_providers" | "logger" | "auditLogger" | "storage"
+  | "client_id"
+  | "client_name"
+  | "trust_anchors"
+  | "trust_anchors_jwks"
+  | "identity_providers"
+  | "logger"
+  | "auditLogger"
+  | "storage"
 >;
 
 type AdditionalConfiguration = {
@@ -203,6 +226,7 @@ export async function createConfigurationFromConfigurationFacade({
   client_id,
   client_name,
   trust_anchors,
+  trust_anchors_jwks,
   identity_providers,
   public_jwks,
   public_jwks_path,
@@ -259,6 +283,7 @@ export async function createConfigurationFromConfigurationFacade({
     client_id,
     client_name,
     trust_anchors,
+    trust_anchors_jwks,
     identity_providers,
 
     application_type: "web",
@@ -329,6 +354,27 @@ export async function validateConfiguration(configuration: Configuration) {
   const invalidTrustAnchors = configuration.trust_anchors.filter((url) => !isValidURL(url));
   if (invalidTrustAnchors.length > 0) {
     throw new Error(`configuration: trust_anchors must be a list of valid urls ${JSON.stringify(invalidTrustAnchors)}`);
+  }
+  // Every trust anchor must come with its pinned public keys, otherwise the
+  // fetched Trust Anchor Entity Configuration could not be verified against a
+  // trusted key and an attacker could impersonate the trust anchor.
+  for (const trustAnchor of configuration.trust_anchors) {
+    const trustAnchorJwks = configuration.trust_anchors_jwks?.[trustAnchor];
+    if (!trustAnchorJwks || !Array.isArray(trustAnchorJwks.keys) || trustAnchorJwks.keys.length < 1) {
+      throw new Error(`configuration: trust_anchors_jwks must contain the pinned keys for trust anchor ${trustAnchor}`);
+    }
+    for (const jwk of trustAnchorJwks.keys) {
+      try {
+        await jose.importJWK(jwk, inferAlgForJWK(jwk));
+      } catch (error) {
+        throw new Error(
+          `configuration: trust_anchors_jwks for ${trustAnchor} must be a list of valid jwks ${JSON.stringify(jwk)}`
+        );
+      }
+      if (!jwk.kid) {
+        throw new Error(`configuration: trust_anchors_jwks for ${trustAnchor} must have a kid ${JSON.stringify(jwk)}`);
+      }
+    }
   }
   for (const providerType of ["cie", "spid"] as const) {
     const invalidProviders = configuration.identity_providers[providerType].filter(
